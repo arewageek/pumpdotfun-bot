@@ -1,12 +1,12 @@
 interface ITokenData {
-  base_token_price_usd: string;
-  base_token_price_native_currency: string;
+  price_usd: string;
   address: string;
   name: string;
+  symbol: string;
   fdv_usd: string;
-  market_cap_usd: string;
+  total_reserve_in_usd: string;
+  image_url: string;
   volume_usd: ITokenDataTimestamps;
-  price_change_percentage: ITokenDataTimestamps;
 }
 
 interface ITokenDataTimestamps {
@@ -25,49 +25,37 @@ export const fetchTokenData = async (
 }> => {
   try {
     const url = ca
-      ? `${process.env.API_BASE_URL!}/networks/solana/pools/${ca}`
+      ? `${process.env.API_BASE_URL!}/networks/solana/tokens/${ca}`
       : "";
     console.log({ url });
     const response = await fetch(url);
     if (!response.ok) throw new Error("Failed to fetch token data");
     const res = await response.json();
 
+    console.log({ res: res.data.attributes });
+
     const {
-      base_token_price_usd,
-      base_token_price_native_currency,
+      price_usd,
+      total_reserve_in_usd,
       address,
       name,
+      symbol,
       fdv_usd,
-      market_cap_usd,
       volume_usd,
-      price_change_percentage,
-      transactions,
+      image_url,
     } = res.data.attributes;
 
-    console.log({
-      base_token_price_usd,
-      base_token_price_native_currency,
-      address,
-      name,
-      fdv_usd,
-      market_cap_usd,
-      volume_usd,
-      price_change_percentage,
-      transactions,
-    });
-
-    console.log({ response: res.data });
     return {
       success: true,
       data: {
-        base_token_price_usd,
-        base_token_price_native_currency,
+        price_usd,
         address,
         name,
+        symbol,
         fdv_usd,
-        market_cap_usd,
         volume_usd,
-        price_change_percentage,
+        total_reserve_in_usd,
+        image_url,
       },
     };
   } catch (error: any) {
