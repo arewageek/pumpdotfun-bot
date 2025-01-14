@@ -3,6 +3,7 @@ import { fetchTokenData } from "../helpers/token-api";
 import token from "../helpers/solanatracker";
 import meme from "../helpers/meme-api";
 import { response } from "express";
+import users from "./users.controllers";
 
 export const handleTokenCA = async (ctx: Context) => {
   const ca = ctx.message?.text;
@@ -73,14 +74,23 @@ export const handleTokenCA = async (ctx: Context) => {
 
 export const handleFundWallet = async (ctx: Context) => {
   const amount = Number(ctx.message?.text);
-  const response = `Your wallet has been credited with $${amount.toLocaleString()}`;
-  ctx.reply(response);
+  const chatId = ctx.chatId!;
+  const response = await users.fund({ chatId, amount });
+  const reply = {
+    success: `Your wallet has been credited with $${amount.toLocaleString()}`,
+    failed: `Failed to fund wallet`,
+  };
+  ctx.reply(response.success ? reply.success : reply.failed);
 };
 
 export const handleFundWithdrawal = async (ctx: Context) => {
   const amount = Number(ctx.message?.text);
-  const response = `Your wallet has been debited with $${amount.toLocaleString()}`;
-  ctx.reply(response);
+  const chatId = ctx.chatId!;
+  const response = await users.withdraw({ chatId, amount });
+  const reply = response.success
+    ? `Your wallet has been debited with $${amount.toLocaleString()}`
+    : response.message || "Failed to withdraw from your wallet";
+  ctx.reply(reply);
 };
 
 export const handleTokenBuy = async (ctx: Context) => {

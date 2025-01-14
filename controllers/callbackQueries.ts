@@ -15,7 +15,10 @@ export const StartContext = async (ctx: Context) => {
 
     const user = await users.authenticate(ctx);
 
-    const { balance, stats } = await user?.data!;
+    console.log({ userFromCallback_Start: user });
+
+    const stats = user.data?.stats || { count: 0, volume: 0 };
+    const balance = Number(user.data?.balance);
 
     const welcomMessage = `\*Hey, ${sender}, Welcome to Pawn Finance\* 🤗
         \nWe present you with an opportunity to learn and perfect your understanding trading memes on solana
@@ -67,10 +70,14 @@ export const SettingsCallback = async (ctx: Context) => {
 export const AccountCallback = async (ctx: Context) => {
   await ctx.answerCallbackQuery();
 
-  const trades = { count: 0, volume: 0 };
-  const balance = 400;
+  const user = await users.authenticate(ctx);
+  const { balance, stats } = user?.data!;
   const response = `Below you find information about your account and options to update your balance
-  \n\*Wallet Balance: \`$${balance.toLocaleString()}\`\* ┃ \*Total Trades: \`${trades.count.toLocaleString()}\`\* ┃ \*Total Volume: \`$${trades.volume.toLocaleString()}\`\*
+  \n\*Wallet Balance: \`$${
+    balance.toLocaleString() || 0
+  }\`\* ┃ \*Total Trades: \`${
+    stats.count.toLocaleString() || 0
+  }\`\* ┃ \*Total Volume: \`$${stats.volume.toLocaleString() || 0}\`\*
   `;
   await ctx.editMessageText(response, {
     parse_mode: "MarkdownV2",
