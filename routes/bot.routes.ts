@@ -5,6 +5,7 @@ import {
   AccountCallback,
   BuyCallback,
   FundCallback,
+  RequestCACallback,
   SettingsCallback,
   StartContext,
   WithdrawCallback,
@@ -12,6 +13,7 @@ import {
 import {
   handleFundWallet,
   handleFundWithdrawal,
+  handleTokenBuy,
   handleTokenCA,
 } from "../controllers/messageHandler";
 
@@ -53,6 +55,9 @@ const getBotInstance = () => {
             case "How much would you like to withdraw?":
               handleFundWithdrawal(ctx);
               break;
+            case "Please input the amount you want to buy in USDC":
+              handleTokenBuy(ctx);
+              break;
             default:
               handleTokenCA(ctx);
           }
@@ -61,6 +66,7 @@ const getBotInstance = () => {
 
       //   bot callbacks
       //   trade callbacks
+      bot.callbackQuery("request_ca", RequestCACallback);
       bot.callbackQuery("buy", BuyCallback);
       //   config callbacks
       bot.callbackQuery("settings", SettingsCallback);
