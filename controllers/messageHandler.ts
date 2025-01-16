@@ -1,7 +1,5 @@
 import { InlineKeyboard, type Context } from "grammy";
-import { fetchTokenData } from "../helpers/token-api";
-import token from "../helpers/solanatracker";
-import meme from "../helpers/meme-api";
+import meme from "../helpers/transactions";
 import { response } from "express";
 import users from "./users.controllers";
 
@@ -35,6 +33,7 @@ export const handleTokenCA = async (ctx: Context) => {
 
   const res = await meme.data(ca, chatId);
   const token = res.data;
+  const balance = res.meta?.balance!;
   console.log({ updatedResponse: res });
 
   if (!token) {
@@ -46,6 +45,7 @@ export const handleTokenCA = async (ctx: Context) => {
 
   const reply = `Buy \*${token.name}\* ─── \`$${token.symbol}\` 📈🚀
   \n\`${token.address}\`\n(Tap on CA to copy)
+  \n\*Balance: $${balance.toLocaleString()}\*
   \n\*Price: $${Number(token.price)
     .toFixed(6)
     .toLocaleString()} ─── Liq: $${Number(
@@ -96,11 +96,24 @@ export const handleFundWithdrawal = async (ctx: Context) => {
 
 export const handleTokenBuy = async (ctx: Context) => {
   const amount = Number(ctx.message?.text);
+  const chatId = ctx.chatId!;
+
   let reply = `Processing your transaction...`;
   ctx.reply(reply);
 
-  setTimeout(() => {
-    reply = `\*Transaction successful!\* 🚀`;
-    ctx.reply(reply, { parse_mode: "Markdown" });
-  }, 1000);
+  const trx = await meme.buy(chatId, amount);
+  if (!trx.success) {
+    reply = trx.message!;
+  } else {
+    const response = trx.data;
+    reply = `\*Transaction successful!\* 🚀
+    \nMarket Cap: $\`${response?.buy.mc.toLocaleString()}\`
+    \nBase Price: $\`${Number(
+      response?.buy.price.toFixed(6)
+    ).toLocaleString()}\`
+    \nQuantity Purchased: $\`${response?.quantity.toLocaleString()}\`
+    `;
+  }
+
+  trx && ctx.reply(reply, { parse_mode: "Markdown" });
 };

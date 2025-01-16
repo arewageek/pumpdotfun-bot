@@ -1,9 +1,12 @@
 import { connectMongoDB } from "../lib/mongodb";
 import Token from "../models/Token.model";
+import Transaction from "../models/Transaction.model";
+import User from "../models/User.model";
 
 interface ITokenData {
   success: boolean;
   message?: string;
+  meta?: { balance: number };
   data?: {
     address: string;
     symbol: string;
@@ -29,7 +32,9 @@ interface ITokenData {
 class Meme {
   baseUrl = "https://meme-api.openocean.finance";
 
-  async data(ca: string, user: number): Promise<ITokenData> {
+  async data(ca: string, user?: number): Promise<ITokenData> {
+    user && connectMongoDB();
+
     const url = `${this.baseUrl}/market/token/detail?address=${ca}`;
     try {
       const req = await fetch(url);
@@ -60,10 +65,18 @@ class Meme {
         sellCount24h,
       } = res.data;
 
-      await this.makeSession(ca, user);
+      let balance = 0;
+
+      if (user) {
+        const account = await User.findOne({ chatId: user });
+        balance = account.balance;
+
+        await this.makeSession(ca, user);
+      }
 
       return {
         success: true,
+        meta: { balance },
         data: {
           address,
           symbol,
@@ -110,6 +123,70 @@ class Meme {
     } catch (error) {
       console.log({ error });
       return { success: false };
+    }
+  }
+
+  async buy(
+    chatId: number,
+    amount: number
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    data?: { buy: { mc: number; price: number }; quantity: number };
+  }> {
+    try {
+      connectMongoDB();
+
+      const user = await User.findOne({ chatId });
+      const balance = user.balance;
+
+      if (balance < amount)
+        return {
+          success: false,
+          message: "Balance too low for this transaction 🤭",
+        };
+
+      const token = await Token.findOne({ user: chatId });
+      const ca = await token.ca;
+
+      const tokenData = this.data(ca);
+      const tokenPrice = (await tokenData).data?.price!;
+      const tokenQtty = amount / tokenPrice;
+
+      const { marketCap, price } = (await tokenData).data!;
+
+      const trade = new Transaction({
+        trader: user.chatId,
+        marketCap: { buy: marketCap },
+        tokenQtty,
+        usdValue: { buy: price },
+        isOpen: true,
+      });
+
+      trade.save();
+
+      const prevStats = user.stats;
+      const newStats = {
+        count: prevStats.count + 1,
+        volume: prevStats.volume + amount,
+      };
+
+      // debit the user and update stats
+      const newBalance = balance - amount;
+      user.balance = newBalance;
+      user.stats = newStats;
+      user.save();
+
+      return {
+        success: true,
+        data: { buy: { mc: marketCap, price }, quantity: tokenQtty },
+      };
+    } catch (error: any) {
+      console.log({ error });
+      return {
+        success: false,
+        message: "An error occurred while processing your transaction ⚠️",
+      };
     }
   }
 }
