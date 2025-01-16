@@ -11,6 +11,10 @@ interface ITransaction {
     buy: number;
     sell?: number;
   };
+  token: {
+    name: string;
+    symbol: string;
+  };
   isOpen: boolean;
 }
 
@@ -26,7 +30,12 @@ const TransactionSchema = new Schema(
       buy: { type: String, required: true },
       sell: { type: String, required: false },
     },
+
     isOpen: Boolean,
+    token: {
+      name: String,
+      symbol: String,
+    },
   },
   { timestamps: true }
 );

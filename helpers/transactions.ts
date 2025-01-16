@@ -153,7 +153,7 @@ class Meme {
       const tokenPrice = (await tokenData).data?.price!;
       const tokenQtty = amount / tokenPrice;
 
-      const { marketCap, price } = (await tokenData).data!;
+      const { marketCap, price, symbol, name } = (await tokenData).data!;
 
       const trade = new Transaction({
         trader: user.chatId,
@@ -161,6 +161,10 @@ class Meme {
         tokenQtty,
         usdValue: { buy: price },
         isOpen: true,
+        token: {
+          symbol: symbol,
+          name: name,
+        },
       });
 
       trade.save();
