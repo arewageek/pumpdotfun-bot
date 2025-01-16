@@ -1,3 +1,6 @@
+import { connectMongoDB } from "../lib/mongodb";
+import Token from "../models/Token.model";
+
 interface ITokenData {
   success: boolean;
   message?: string;
@@ -26,7 +29,7 @@ interface ITokenData {
 class Meme {
   baseUrl = "https://meme-api.openocean.finance";
 
-  async data(ca: string): Promise<ITokenData> {
+  async data(ca: string, user: number): Promise<ITokenData> {
     const url = `${this.baseUrl}/market/token/detail?address=${ca}`;
     try {
       const req = await fetch(url);
@@ -57,6 +60,8 @@ class Meme {
         sellCount24h,
       } = res.data;
 
+      await this.makeSession(ca, user);
+
       return {
         success: true,
         data: {
@@ -83,6 +88,28 @@ class Meme {
     } catch (error: any) {
       console.log({ error });
       return { success: false, message: error.message };
+    }
+  }
+
+  async makeSession(ca: string, user: number): Promise<{ success: boolean }> {
+    try {
+      connectMongoDB();
+      const tokenSession = await Token.findOne({ user });
+      if (!tokenSession) {
+        const createRecord = new Token({
+          ca,
+          user,
+        });
+        await createRecord.save();
+      }
+
+      tokenSession.ca = ca;
+      await tokenSession.save();
+
+      return { success: true };
+    } catch (error) {
+      console.log({ error });
+      return { success: false };
     }
   }
 }

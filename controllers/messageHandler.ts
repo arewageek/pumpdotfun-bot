@@ -6,7 +6,8 @@ import { response } from "express";
 import users from "./users.controllers";
 
 export const handleTokenCA = async (ctx: Context) => {
-  const ca = ctx.message?.text;
+  const ca = ctx.message?.text!;
+  const chatId = ctx.chatId!;
   //   const data = await fetchTokenData(ca!);
   //   const token = data.data;
 
@@ -32,7 +33,7 @@ export const handleTokenCA = async (ctx: Context) => {
   //         "Oops! 🤭🤭\n\nCould not find the contract address you provided"
   //       );
 
-  const res = await meme.data(ca!);
+  const res = await meme.data(ca, chatId);
   const token = res.data;
   console.log({ updatedResponse: res });
 
