@@ -1,5 +1,8 @@
 import { InlineKeyboard, type Context } from "grammy";
 import users from "./users.controllers";
+import meme from "../helpers/transactions";
+import { format } from "../lib/number-formatter";
+import { handleTokenPreview } from "./messageHandler";
 
 // start-bot context
 export const StartContext = async (ctx: Context) => {
@@ -37,16 +40,15 @@ export const StartContext = async (ctx: Context) => {
       parse_mode: "MarkdownV2",
       reply_markup: new InlineKeyboard()
         .text("Buy 🟢", "request_ca")
-        .text("Sell 🔴", "sell")
+        .text("Positions 📈", "positions")
         .row()
         .text("Account 💰", "account")
-        .text("Positions 📈", "positions")
-        .text("Settings ⚙️", "settings")
-        .row()
+        // .text("Settings ⚙️", "settings")
         .text("⟲ Refresh", "refresh")
+        // .row()
         .row()
-        .url("Follow us on X", "https://x.com/pawn_fi")
-        .url("Join Our Telegram", "https://x.com/pawn_fi"),
+        .url("Follow us on X", "https://x.com/paw_fi")
+        .url("Follow our dev", "https://x.com/arewaofweb3"),
     });
   } catch (error) {
     console.log({ startMessageError: error });
@@ -105,4 +107,42 @@ export const WithdrawCallback = async (ctx: Context) => {
 export const BuyCallback = async (ctx: Context) => {
   const reply = "Please input the amount you want to buy in USDC";
   await ctx.reply(reply, { reply_markup: { force_reply: true } });
+};
+
+export const PositionsCallback = async (ctx: Context) => {
+  const trader = ctx.chatId!;
+
+  const positions = await meme.positions(trader);
+
+  console.log({ positionsFromQuery: positions });
+
+  const inlineKeyboard = new InlineKeyboard();
+
+  if (positions.data?.length) {
+    positions.data.forEach((trade, index) => {
+      const callbackData = handleTokenPreview(trade.token.ca);
+
+      inlineKeyboard.text(
+        `${trade.token.name} (${format(trade.tokenQtty, 6)} $${
+          trade.token.symbol
+        })`,
+        callbackData
+      );
+
+      index % 2 === 1 && inlineKeyboard.row();
+    });
+  } else {
+    inlineKeyboard.text("No open trades", "no_trades");
+  }
+
+  inlineKeyboard.row().text("Back", "back");
+
+  const reply = `\*Managing your Open trades\*\n\n\*Balance:\* $${format(
+    positions.meta?.balance!
+  )}\n*Positions:* ${positions.meta?.trades.count!} trades\n`;
+
+  await ctx.reply(reply, {
+    parse_mode: "Markdown",
+    reply_markup: inlineKeyboard,
+  });
 };

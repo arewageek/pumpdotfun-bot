@@ -5,6 +5,7 @@ import {
   AccountCallback,
   BuyCallback,
   FundCallback,
+  PositionsCallback,
   RequestCACallback,
   SettingsCallback,
   StartContext,
@@ -68,6 +69,7 @@ const getBotInstance = () => {
       //   trade callbacks
       bot.callbackQuery("request_ca", RequestCACallback);
       bot.callbackQuery("buy", BuyCallback);
+      bot.callbackQuery("positions", PositionsCallback);
       //   config callbacks
       bot.callbackQuery("settings", SettingsCallback);
       bot.callbackQuery("account", AccountCallback);

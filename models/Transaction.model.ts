@@ -1,7 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 
 interface ITransaction {
-  trader: string;
+  trader: number;
   marketCap: {
     buy: number;
     sell?: number;
@@ -14,27 +14,29 @@ interface ITransaction {
   token: {
     name: string;
     symbol: string;
+    ca: string;
   };
   isOpen: boolean;
 }
 
 const TransactionSchema = new Schema(
   {
-    trader: { type: String, required: true },
+    trader: { type: Number, required: true },
     marketCap: {
       buy: { type: Number, required: true },
-      sell: { type: String, required: false },
+      sell: { type: Number, required: false },
     },
     tokenQtty: { type: Number, required: true },
     usdValue: {
-      buy: { type: String, required: true },
-      sell: { type: String, required: false },
+      buy: { type: Number, required: true },
+      sell: { type: Number, required: false },
     },
 
     isOpen: Boolean,
     token: {
       name: String,
       symbol: String,
+      ca: String,
     },
   },
   { timestamps: true }

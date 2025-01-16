@@ -2,6 +2,7 @@ import { InlineKeyboard, type Context } from "grammy";
 import meme from "../helpers/transactions";
 import { response } from "express";
 import users from "./users.controllers";
+import { format } from "../lib/number-formatter";
 
 export const handleTokenCA = async (ctx: Context) => {
   const ca = ctx.message?.text!;
@@ -48,19 +49,15 @@ export const handleTokenCA = async (ctx: Context) => {
   \n\*Balance: $${balance.toLocaleString()}\*
   \n\*Price: $${Number(token.price)
     .toFixed(6)
-    .toLocaleString()} ─── Liq: $${Number(
-    token.liquidity.toFixed(2).toLocaleString()
-  )} ─── MC: $${Number(token.marketCap.toFixed(2)).toLocaleString()}\*
+    .toLocaleString()} ─── Liq: $${format(
+    Number(token.liquidity.toFixed(2))
+  )} ─── MC: $${format(Number(token.marketCap.toFixed(2)))}\*
   \nTwitter | Telegram | Website
-  \n24Hr Vol: \*$${Number(
-    token.tradeVolume24h.toFixed(2)
-  ).toLocaleString()} ─── ${Number(
-    token.tradeUserCount
-  ).toLocaleString()} trades\* \nBuys: \*${Number(
-    token.buyCount24h
-  ).toLocaleString()}\* ─── Sells: \*${Number(
-    token.sellCount24h
-  ).toLocaleString()}\*
+  \n24Hr Vol: \*$${format(
+    Number(token.tradeVolume24h.toFixed(2))
+  )} ─── ${format(Number(token.tradeUserCount))} trades\* \nBuys: \*${format(
+    Number(token.buyCount24h.toFixed(2))
+  )}\* ─── Sells: \*${format(Number(token.sellCount24h.toFixed(2)))}\*
   \nTop 10: \*${Number(token.top10Holder).toLocaleString()}%\*
   `;
   ctx.reply(reply, {
@@ -107,13 +104,15 @@ export const handleTokenBuy = async (ctx: Context) => {
   } else {
     const response = trx.data;
     reply = `\*Transaction successful!\* 🚀
-    \nMarket Cap: $\`${response?.buy.mc.toLocaleString()}\`
-    \nBase Price: $\`${Number(
-      response?.buy.price.toFixed(6)
-    ).toLocaleString()}\`
-    \nQuantity Purchased: $\`${response?.quantity.toLocaleString()}\`
+    \nMarket Cap: \`$${format(response?.buy.mc!)}\`
+    \nBase Price: \`$${format(response?.buy.price!, 6)}\`
+    \nQuantity Purchased: \`${format(response?.quantity!, 2)}\`
     `;
   }
 
   trx && ctx.reply(reply, { parse_mode: "Markdown" });
+};
+
+export const handleTokenPreview = (ca: string) => {
+  return "";
 };
