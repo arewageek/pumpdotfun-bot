@@ -3,6 +3,7 @@ import users from "./users.controllers";
 import meme from "../helpers/transactions";
 import { format } from "../lib/number-formatter";
 import { handleTokenPreview } from "./messageHandler";
+import { Menu } from "@grammyjs/menu";
 
 // start-bot context
 export const StartContext = async (ctx: Context) => {
@@ -120,13 +121,13 @@ export const PositionsCallback = async (ctx: Context) => {
 
   if (positions.data?.length) {
     positions.data.forEach((trade, index) => {
-      const callbackData = handleTokenPreview(trade.token.ca);
+      const contextCallback = `sell ${trade.token.ca}`;
 
       inlineKeyboard.text(
         `${trade.token.name} (${format(trade.tokenQtty, 6)} $${
           trade.token.symbol
         })`,
-        callbackData
+        contextCallback
       );
 
       index % 2 === 1 && inlineKeyboard.row();
@@ -145,4 +146,21 @@ export const PositionsCallback = async (ctx: Context) => {
     parse_mode: "Markdown",
     reply_markup: inlineKeyboard,
   });
+};
+
+export const TokenProfileCallback = async (ctx: Context) => {
+  // const ca = ctx.match?.[0]!;
+  // const tokenDetails = await meme.data(ca);
+  const reply = `Content`;
+  const inlineKeyboard = new InlineKeyboard();
+  inlineKeyboard
+    .text("Back", "back")
+    .text("Refresh", "refresh")
+    .row()
+    .text("Buy More", "buy_more")
+    .text("Sell Initials", "sell_initials")
+    .row()
+    .text("Sell", "sell");
+
+  ctx.reply(reply);
 };
