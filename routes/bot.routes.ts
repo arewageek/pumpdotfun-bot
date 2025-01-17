@@ -9,6 +9,7 @@ import {
   RequestCACallback,
   SettingsCallback,
   StartContext,
+  TokenProfileCallback,
   WithdrawCallback,
 } from "../controllers/callbackQueries";
 import {
@@ -16,6 +17,7 @@ import {
   handleFundWithdrawal,
   handleTokenBuy,
   handleTokenCA,
+  handleTokenPreview,
 } from "../controllers/messageHandler";
 
 const router = express.Router();
@@ -66,17 +68,24 @@ const getBotInstance = () => {
       });
 
       //   bot callbacks
-      //   trade callbacks
-      bot.callbackQuery("request_ca", RequestCACallback);
-      bot.callbackQuery("buy", BuyCallback);
-      bot.callbackQuery("positions", PositionsCallback);
+
       //   config callbacks
       bot.callbackQuery("settings", SettingsCallback);
       bot.callbackQuery("account", AccountCallback);
       bot.callbackQuery("back", StartContext);
+
       // wallet balance callbacks
       bot.callbackQuery("fund", FundCallback);
       bot.callbackQuery("withdraw", WithdrawCallback);
+
+      //   trade callbacks
+      bot.callbackQuery("request_ca", RequestCACallback);
+      bot.callbackQuery("buy", BuyCallback);
+      bot.callbackQuery("positions", PositionsCallback);
+      bot.callbackQuery("sell (.+)/", (ctx) => {
+        const ca = ctx.match[0];
+        ctx.reply(`CA found ${ca}`);
+      });
     }
     run(bot);
     console.log("Bot is now running");
