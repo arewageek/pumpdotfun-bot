@@ -51,7 +51,9 @@ class Meme {
       if (!req.ok) throw new Error("Failed to get token data");
 
       const res = await req.json();
-      console.log({ res });
+
+      if (res.data == null)
+        return { success: false, message: "No token found" };
 
       const {
         address,

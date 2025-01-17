@@ -35,7 +35,6 @@ export const handleTokenCA = async (ctx: Context) => {
   const res = await meme.data(ca, chatId);
   const token = res.data;
   const balance = res.meta?.balance!;
-  console.log({ updatedResponse: res });
 
   if (!token) {
     ctx.reply(
@@ -113,6 +112,8 @@ export const handleTokenBuy = async (ctx: Context) => {
   trx && ctx.reply(reply, { parse_mode: "Markdown" });
 };
 
-export const handleTokenPreview = (ca: string) => {
-  return "";
+export const handleTokenPreview = (ca: string, ctx: Context) => {
+  ctx.reply("ca");
+  console.log({ responseFromMessageHandler: "token preview callback" });
+  return "content";
 };
