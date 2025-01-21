@@ -2,23 +2,17 @@ import express from "express";
 import { Bot, Context } from "grammy";
 import { run } from "@grammyjs/runner";
 import {
-  AccountCallback,
-  BuyCallback,
-  FundCallback,
-  PositionsCallback,
-  RequestCACallback,
-  SettingsCallback,
-  StartContext,
-  TokenProfileCallback,
-  WithdrawCallback,
-} from "../controllers/callbackQueries";
-import {
   handleFundWallet,
   handleFundWithdrawal,
   handleTokenBuy,
   handleTokenCA,
   handleTokenPreview,
 } from "../controllers/messageHandler";
+import {
+  CreateTokenContext,
+  StartContext,
+  WalletContext,
+} from "../controllers/callbackQueries";
 
 const router = express.Router();
 
@@ -67,27 +61,14 @@ const getBotInstance = () => {
         }
       });
 
-      //   bot callbacks
+      //   pumpdotfun callbacks
+      bot.callbackQuery("create", CreateTokenContext);
 
-      //   config callbacks
-      bot.callbackQuery("settings", SettingsCallback);
-      bot.callbackQuery("account", AccountCallback);
-      bot.callbackQuery("back", StartContext);
-
-      // wallet balance callbacks
-      bot.callbackQuery("fund", FundCallback);
-      bot.callbackQuery("withdraw", WithdrawCallback);
-
-      //   trade callbacks
-      bot.callbackQuery("request_ca", RequestCACallback);
-      bot.callbackQuery("buy", BuyCallback);
-      bot.callbackQuery("positions", PositionsCallback);
-      bot.callbackQuery("sell (.+)/", (ctx) => {
-        const ca = ctx.match[0];
-        ctx.reply(`CA found ${ca}`);
-      });
+      // wallet callbacks
+      bot.callbackQuery("wallet", WalletContext);
     }
     run(bot);
+
     console.log("Bot is now running");
   } catch (error) {
     console.log({ error });
