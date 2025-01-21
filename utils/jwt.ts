@@ -1,9 +1,8 @@
 import jwt from "jsonwebtoken";
 
 export const jwtEncrypt = async (data: any): Promise<string> => {
-  const { jwtSecret } = process.env;
-
-  const token = jwt.sign(data, jwtSecret!);
+  const { JWTSECRET } = process.env;
+  const token = jwt.sign(data, "JWTSECRET");
 
   return token;
 };
