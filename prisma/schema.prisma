@@ -11,11 +11,10 @@ datasource db {
 }
 
 model User {
-  id       Int     @id @default(autoincrement())
-  username String
-  chatId   Int  @unique
-  wallet   String  @default("")
-  tokens   Token[]
+  id     Int     @id @default(autoincrement())
+  chatId Int     @unique
+  wallet String  @default("")
+  tokens Token[]
 }
 
 model Token {
