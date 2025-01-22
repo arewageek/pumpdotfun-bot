@@ -6,7 +6,11 @@ import {
   PublicKey,
   LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
-import { PumpFunSDK } from "pumpdotfun-sdk";
+import {
+  PumpFunSDK,
+  type CreateTokenMetadata,
+  type TokenMetadata,
+} from "pumpdotfun-sdk";
 import fs from "fs";
 import path from "path";
 import { getAccount, getAssociatedTokenAddress } from "@solana/spl-token";
@@ -98,27 +102,41 @@ export const printSOLBalance = async (
 };
 
 // Function: Create a token
-export const createToken = async (
-  metadata: IMetadata,
-  sdk: PumpFunSDK,
-  testAccount: Keypair,
-  mint: Keypair,
-  file: File
-): Promise<IResponse> => {
+export const createToken = async (): Promise<IResponse> => {
   try {
-    const tokenMetadata = {
-      name: metadata.name,
-      symbol: metadata.symbol,
-      description: `Token: ${metadata.name}`,
-      file,
+    console.log("\n\n\n\n\n\n\n\n\n Creating new token \n\n\n\n\n\n");
+
+    const creator = Keypair.generate();
+    const mint = Keypair.generate();
+
+    const meta = {
+      name: "Arewa",
+      symbol: "ARW",
+      description: "",
+      file: "../keypair.json",
     };
 
+    const metaBuffer = Buffer.from("../meow.jpeg", "utf-8");
+    const fileBlob = new Blob([metaBuffer], { type: "application/json" });
+
+    const tokenMetadata: CreateTokenMetadata = {
+      name: meta.name,
+      symbol: meta.symbol,
+      description: `Token: ${meta.name}`,
+      twitter: "",
+      file: fileBlob,
+    };
+
+    const supply = 1000;
+
+    const sdk = new PumpFunSDK();
+
     const create = await sdk.createAndBuy(
-      testAccount,
+      creator,
       mint,
       tokenMetadata,
       BigInt(0.0001 * LAMPORTS_PER_SOL),
-      BigInt(metadata.supply),
+      BigInt(supply),
       {
         unitLimit: 250000,
         unitPrice: 250000,
@@ -127,20 +145,16 @@ export const createToken = async (
 
     if (create.success) {
       console.log("Success:", `https://pump.fun/${mint.publicKey.toBase58()}`);
-      await printSPLBalance(
-        sdk.connection,
-        mint.publicKey,
-        testAccount.publicKey
-      );
+      await printSPLBalance(sdk.connection, mint.publicKey, creator.publicKey);
       return { success: true, message: "Token created successfully" };
     }
 
     return { success: false, message: "Create and Buy failed" };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in token creation:", error);
     return {
       success: false,
-      message: "An error occurred during token creation",
+      message: error.message,
     };
   }
 };

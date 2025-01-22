@@ -3,6 +3,8 @@ import { createToken, getProvider } from "../helpers/pumpfun";
 import { PumpFunSDK } from "pumpdotfun-sdk";
 import { Keypair } from "@solana/web3.js";
 import { createWallet, retrieveWallet } from "../helpers/account";
+import { createTokenViaPfsdk } from "../helpers/pfsdk";
+import { format } from "../utils/number-formatter";
 
 // start-bot context
 export const StartContext = async (ctx: Context) => {
@@ -27,31 +29,24 @@ export const StartContext = async (ctx: Context) => {
 // create-token context
 export const CreateTokenContext = async (ctx: Context) => {
   try {
-    const provider = getProvider();
-    const sdk = new PumpFunSDK(provider);
+    // const response = await createToken();
+    const response = await createTokenViaPfsdk();
 
-    const testAccount = Keypair.generate();
-    const mint = Keypair.generate();
-
-    const file = new File(["Sample meme token"], "token.png", {
-      type: "image/png",
-    });
-
-    const metadata = {
-      name: "My Meme Token",
-      symbol: "MMT",
-      supply: 1000,
-    };
-
-    const response = await createToken(metadata, sdk, testAccount, mint, file);
+    let reply = "";
 
     if (response.success) {
-      await ctx.reply(
-        `🎉 Token created successfully! View it here: https://pump.fun/${mint.publicKey.toBase58()}`
-      );
+      reply = `🎉 Token created successfully! View it here: https://pump.fun/${response.data}`;
     } else {
-      await ctx.reply("❌ Failed to create token. Please try again later.");
+      reply = `❌ Your wallet (\*${response.data.wallet.slice(
+        0,
+        5
+      )}...${response.data.wallet.slice(
+        -3
+      )}\*) does not have enough SOL for this transaction
+      \n\*Required: ${format(response.data.required, 6)} SOL\*
+      \n\*Available: ${format(response.data.available, 6)} SOL\*`;
     }
+    ctx.reply(reply, { parse_mode: "Markdown" });
   } catch (error) {
     console.error({ createTokenError: error });
     await ctx.reply("❌ An error occurred while creating the token.");
