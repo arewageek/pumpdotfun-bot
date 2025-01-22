@@ -12,7 +12,7 @@ datasource db {
 
 model User {
   id     Int     @id @default(autoincrement())
-  chatId Int     @unique
+  chatId String  @unique
   wallet String  @default("")
   tokens Token[]
 }
@@ -26,4 +26,12 @@ model Token {
 
   creator   User @relation(fields: [creatorId], references: [id])
   creatorId Int
+}
+
+model TokenCache {
+  id          Int    @id @default(autoincrement())
+  name        String
+  symbol      String
+  supply      Int
+  description String
 }

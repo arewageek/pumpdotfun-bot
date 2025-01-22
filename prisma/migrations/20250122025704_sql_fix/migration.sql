@@ -1,7 +1,7 @@
 -- CreateTable
 CREATE TABLE "User" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "chatId" INTEGER NOT NULL,
+    "chatId" TEXT NOT NULL,
     "wallet" TEXT NOT NULL DEFAULT ''
 );
 

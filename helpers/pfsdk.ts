@@ -5,8 +5,12 @@ import {
   Keypair,
   LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
+import prisma from "../lib/prisma";
+import { jwtDecrypt } from "../utils/jwt";
+import { base58_to_binary } from "base58-js";
 
 export const createTokenViaPfsdk = async (
+  chatId: string,
   name?: string,
   symbol?: string,
   description?: string
@@ -16,7 +20,13 @@ export const createTokenViaPfsdk = async (
   message?: string;
 }> => {
   try {
-    const creator = Keypair.generate();
+    const user = await prisma.user.findFirst({ where: { chatId } });
+    const creatorWalletToken = user?.wallet;
+    const creatorWalletSecret = await jwtDecrypt(creatorWalletToken!);
+    const keypair = Keypair.fromSecretKey(
+      base58_to_binary(creatorWalletSecret as string)
+    );
+    const creator = keypair;
     const token = Keypair.generate();
 
     // const imageeSource = "../meow.jpeg";

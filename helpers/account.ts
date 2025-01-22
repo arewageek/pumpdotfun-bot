@@ -8,11 +8,6 @@ export interface IWallet {
   public: PublicKey;
 }
 
-/**
- * Create a new wallet and store it securely.
- * @param {number} chatId - The user's chat ID.
- * @returns {Promise<{ success: boolean; message?: string; data?: { public: PublicKey; private: Uint8Array } }>}
- */
 export async function createWallet(chatId: number): Promise<{
   success: boolean;
   message?: string;
@@ -26,15 +21,14 @@ export async function createWallet(chatId: number): Promise<{
       private: binary_to_base58(key.secretKey),
     };
 
-    // const tokenizedWallet = await jwtEncrypt(wallet.private);
+    const tokenizedWallet = await jwtEncrypt(wallet.private);
 
-    // await prisma.user.update({
-    //   where: { chatId },
-    //   data: {
-    //     wallet:
-    //       "eyJhbGciOiJIUzI1NiJ9.M29wVlp1QUxwTmZhZ1p3ZWFWVkJONXVhY0pFWm5ZOUdZZjNLYnljTTNDZWJFQUxRZlh6QTV3VXNMcTgza0UzMWpYaXNFZUpDdjJvQVlwSzFnYVRBZUFvRQ.6qyrgopaZ3QIb8N7Im5nIz7tfU1aL3jJ4B14aYky_bo",
-    //   },
-    // });
+    await prisma.user.create({
+      data: {
+        chatId: chatId.toString(),
+        wallet: tokenizedWallet,
+      },
+    });
 
     return { success: true, data: wallet };
   } catch (error: any) {
@@ -66,21 +60,31 @@ export async function retrieveWallet(
   chatId: number
 ): Promise<{ success: boolean; message?: string; data?: IWallet }> {
   try {
-    const user = await prisma.user.findUnique({ where: { chatId } });
-    let wallet;
+    const user = await prisma.user.findUnique({
+      where: { chatId: chatId.toString() },
+    });
+    let walletAddress;
 
     if (!user) {
       const create = await createWallet(chatId);
-      wallet = create.data;
+      walletAddress = create.data?.private;
     } else {
-      wallet = JSON.parse(await jwtDecrypt(user.wallet));
+      walletAddress = await jwtDecrypt(user.wallet.valueOf());
     }
 
-    console.log({ wallet: await wallet });
+    const key = Keypair.fromSecretKey(
+      base58_to_binary(walletAddress as string)
+    );
+    const publicKey = key.publicKey;
 
-    return { success: true, data: await wallet };
+    console.log({ walletFromRetrieverCode: publicKey });
+
+    return {
+      success: true,
+      data: { public: publicKey, private: key.secretKey },
+    };
   } catch (error: any) {
-    console.error("Error retrieving wallet:", error);
+    console.error("Error retrieving wallet: ", error);
     return {
       success: false,
       message: error.message || "Failed to retrieve wallet.",

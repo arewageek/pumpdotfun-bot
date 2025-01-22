@@ -29,8 +29,9 @@ export const StartContext = async (ctx: Context) => {
 // create-token context
 export const CreateTokenContext = async (ctx: Context) => {
   try {
+    const chatId = ctx.chatId;
     // const response = await createToken();
-    const response = await createTokenViaPfsdk();
+    const response = await createTokenViaPfsdk(chatId?.toString()!);
 
     let reply = "";
 
@@ -66,7 +67,7 @@ export const WalletContext = async (ctx: Context) => {
     const walletResult = await retrieveWallet(chatId);
 
     if (walletResult.success && walletResult.data) {
-      const walletAddress = walletResult.data.public.toString();
+      const walletAddress = walletResult.data.public;
       const message = `🪙 Your wallet address: \`${walletAddress}\``;
       await ctx.reply(message, { parse_mode: "MarkdownV2" });
     } else {
@@ -75,7 +76,7 @@ export const WalletContext = async (ctx: Context) => {
       if (newWalletResult.success && newWalletResult.data) {
         const newWalletAddress = newWalletResult.data.public.toString();
         const message = `🎉 A new wallet has been created for you! \n🪙 Wallet address: \`${newWalletAddress}\``;
-        await ctx.reply(message, { parse_mode: "MarkdownV2" });
+        await ctx.reply(message, { parse_mode: "Markdown" });
       } else {
         throw new Error(
           newWalletResult.message || "Failed to create a new wallet"
