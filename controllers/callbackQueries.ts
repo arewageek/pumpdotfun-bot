@@ -11,7 +11,7 @@ export const StartContext = async (ctx: Context) => {
   try {
     const sender = ctx.chat?.first_name;
 
-    const welcomMessage = `\*Hey, ${sender}, Welcome to Pumpdotfun Bot\* 🤗
+    const welcomMessage = `\*Hey, ${sender}, Welcome to Solana Token Minter\* 🤗
         \nThis bots let's you create and trade solana meme tokens right from telegram, taking away the complexities involved with interacting with this token
         \nYou can interact with this bot using the commands made available for you below
         `;
@@ -20,38 +20,31 @@ export const StartContext = async (ctx: Context) => {
       parse_mode: "MarkdownV2",
       reply_markup: new InlineKeyboard()
         .text("Wallet 🟢", "wallet")
-        .text("Create Token 📈", "create"),
+        .text("Create Token 📈", "start-create"),
     });
   } catch (error) {
     console.log({ startMessageError: error });
   }
 };
+
+// initialize token creation context
+export const StartTokenCreationContext = async (ctx: Context) => {
+  ctx.reply("What is the name of this token you want to create?", {
+    reply_markup: { force_reply: true },
+  });
+};
+
 // create-token context
-export const CreateTokenContext = async (ctx: Context) => {
-  try {
-    const chatId = ctx.chatId;
-    // const response = await createToken();
-    const response = await createTokenViaPfsdk(chatId?.toString()!);
+export const CreateTokenContext = async (ctx: Context) => {};
 
-    let reply = "";
-
-    if (response.success) {
-      reply = `🎉 Token created successfully! View it here: https://pump.fun/${response.data}`;
-    } else {
-      reply = `❌ Your wallet (\*${response.data.wallet.slice(
-        0,
-        5
-      )}...${response.data.wallet.slice(
-        -3
-      )}\*) does not have enough SOL for this transaction
-      \n\*Required: ${format(response.data.required, 6)} SOL\*
-      \n\*Available: ${format(response.data.available, 6)} SOL\*`;
-    }
-    ctx.reply(reply, { parse_mode: "Markdown" });
-  } catch (error) {
-    console.error({ createTokenError: error });
-    await ctx.reply("❌ An error occurred while creating the token.");
-  }
+export const TokenNameContext = (ctx: Context) => {
+  ctx.reply("What is the name of your token?");
+};
+export const TokenSymbolContext = (ctx: Context) => {
+  ctx.reply("What is the symbol for the token");
+};
+export const TokenDescriptionContext = (ctx: Context) => {
+  ctx.reply("Share a small story behind your token");
 };
 
 // wallet context

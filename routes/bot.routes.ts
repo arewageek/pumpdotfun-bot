@@ -4,8 +4,14 @@ import { run } from "@grammyjs/runner";
 import {
   CreateTokenContext,
   StartContext,
+  StartTokenCreationContext,
   WalletContext,
 } from "../controllers/callbackQueries";
+import {
+  handleTokenMint,
+  handleTokenName,
+  handleTokenSymbol,
+} from "../controllers/messageHandler";
 
 const router = express.Router();
 
@@ -20,8 +26,38 @@ const getBotInstance = () => {
 
       bot.command("start", StartContext);
 
+      // custom commands sent to the bot
+      bot.on("message", async (ctx) => {
+        let isReply: boolean, repliedTo: string | undefined;
+        repliedTo = ctx.message.reply_to_message?.text;
+        isReply = !!repliedTo;
+
+        switch (repliedTo) {
+          case "What is the name of this token you want to create?":
+            await handleTokenName(ctx);
+            break;
+
+          case "Sorry i didn' catch that. Let's start all over ─── What's the name of the token?":
+            await handleTokenName(ctx);
+            break;
+
+          case "What is the symbol of your token?":
+            await handleTokenSymbol(ctx);
+            break;
+
+          case "Cool, now I'd like you to share a little story about your project":
+            await handleTokenMint(ctx);
+            break;
+
+          default:
+            await handleTokenName(ctx);
+            break;
+        }
+      });
+
       //   pumpdotfun callbacks
       bot.callbackQuery("create", CreateTokenContext);
+      bot.callbackQuery("start-create", StartTokenCreationContext);
 
       // wallet callbacks
       bot.callbackQuery("wallet", WalletContext);
