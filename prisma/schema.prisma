@@ -29,9 +29,9 @@ model Token {
 }
 
 model TokenCache {
-  id          Int    @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
+  creator     String
   name        String
-  symbol      String
-  supply      Int
-  description String
+  symbol      String?
+  description String?
 }

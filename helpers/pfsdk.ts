@@ -9,12 +9,19 @@ import prisma from "../lib/prisma";
 import { jwtDecrypt } from "../utils/jwt";
 import { base58_to_binary } from "base58-js";
 
-export const createTokenViaPfsdk = async (
-  chatId: string,
-  name?: string,
-  symbol?: string,
-  description?: string
-): Promise<{
+export const createTokenViaPfsdk = async ({
+  chatId,
+  name,
+  symbol,
+  description,
+  imageUri,
+}: {
+  chatId: string;
+  name: string;
+  symbol: string;
+  description: string;
+  imageUri: string;
+}): Promise<{
   success: boolean;
   data?: any;
   message?: string;
@@ -31,19 +38,23 @@ export const createTokenViaPfsdk = async (
 
     // const imageeSource = "../meow.jpeg";
 
-    const metaBuffer = Buffer.from("../meow.jpeg", "utf-8");
-    const imageBlob = new Blob([metaBuffer], { type: "application/json" });
+    const metaBuffer: Buffer = Buffer.from(imageUri || "../meow.jpeg", "utf-8");
+    const imageBlob: Blob = new Blob([metaBuffer], {
+      type: "application/json",
+    });
 
-    const image = new File([imageBlob], "image.jpg");
+    const image: File = new File([imageBlob], "image.jpg");
 
     const tokenMeta: TokenMeta = {
-      name: "ABC",
-      symbol: "DEF",
-      description: "GHI",
+      name,
+      symbol,
+      description,
       image,
       keypair: token,
       // socials if any...
     };
+
+    console.log({ tokenMeta });
 
     const connection = new Connection(clusterApiUrl("mainnet-beta"));
     const fun = new Fun(connection);

@@ -1,13 +1,19 @@
 import { InlineKeyboard, type Context } from "grammy";
 import { createTokenViaPfsdk } from "../helpers/pfsdk";
 import { format } from "../utils/number-formatter";
+import prisma from "../lib/prisma";
 
 const errorResponse =
   "Sorry i didn' catch that. Let's start all over ─── What's the name of the token?";
 
 export const handleTokenName = async (ctx: Context) => {
   try {
-    const tokenName = ctx.message?.text;
+    const name = ctx.message?.text!;
+    const chatId = ctx.chatId!;
+
+    await prisma.tokenCache.create({
+      data: { creator: chatId?.toString(), name },
+    });
 
     await ctx.reply("What is the symbol of your token?", {
       reply_markup: { force_reply: true },
@@ -20,7 +26,16 @@ export const handleTokenName = async (ctx: Context) => {
 
 export const handleTokenSymbol = async (ctx: Context) => {
   try {
-    const symbol = ctx.message?.text;
+    const symbol = ctx.message?.text!;
+    const chatId = ctx.chatId?.toString()!;
+
+    const token = await prisma.tokenCache.findFirst({
+      where: { creator: chatId },
+    });
+    await prisma.tokenCache.update({
+      where: { id: token?.id },
+      data: { symbol },
+    });
 
     ctx.reply(
       "Cool, now I'd like you to share a little story about your project",
@@ -31,11 +46,44 @@ export const handleTokenSymbol = async (ctx: Context) => {
   }
 };
 
+export const handleTokenDescription = async (ctx: Context) => {
+  try {
+    const chatId = ctx.chatId?.toString()!;
+    const description = ctx.message?.text;
+
+    const token = await prisma.tokenCache.findFirst({
+      where: { creator: chatId },
+    });
+    await prisma.tokenCache.update({
+      where: { id: token?.id },
+      data: { description },
+    });
+
+    ctx.reply("Perfect, now I'd like you to share a link to the token's logo");
+  } catch (error) {
+    console.log({ error });
+    ctx.reply(errorResponse, { reply_markup: { force_reply: true } });
+  }
+};
+
 export const handleTokenMint = async (ctx: Context) => {
   try {
-    const chatId = ctx.chatId;
+    const chatId = ctx.chatId?.toString()!;
+    const token = await prisma.tokenCache.findFirst({
+      where: { creator: chatId },
+    });
+
+    // prevent repeated data
+    await prisma.tokenCache.deleteMany({ where: { creator: chatId } });
+
     // const response = await createToken();
-    const response = await createTokenViaPfsdk(chatId?.toString()!);
+    const response = await createTokenViaPfsdk({
+      chatId: chatId?.toString()!,
+      name: token?.name!,
+      symbol: token?.symbol!,
+      description: token?.description!,
+      imageUri: ctx.message?.text!,
+    });
 
     let reply = "";
 

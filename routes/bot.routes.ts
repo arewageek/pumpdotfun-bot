@@ -8,6 +8,7 @@ import {
   WalletContext,
 } from "../controllers/callbackQueries";
 import {
+  handleTokenDescription,
   handleTokenMint,
   handleTokenName,
   handleTokenSymbol,
@@ -46,11 +47,17 @@ const getBotInstance = () => {
             break;
 
           case "Cool, now I'd like you to share a little story about your project":
+            await handleTokenDescription(ctx);
+            break;
+
+          case "Perfect, now I'd like you to share a link to the token's logo":
             await handleTokenMint(ctx);
             break;
 
           default:
-            await handleTokenName(ctx);
+            ctx.reply(
+              "Seems like you missed it. Please select a button on the /start message to begin"
+            );
             break;
         }
       });
