@@ -40,10 +40,10 @@ export const createTokenViaPfsdk = async ({
 
     const metaBuffer: Buffer = Buffer.from(imageUri || "../meow.jpeg", "utf-8");
     const imageBlob: Blob = new Blob([metaBuffer], {
-      type: "application/json",
+      type: "images/jpg",
     });
 
-    const image: File = new File([imageBlob], "image.jpg");
+    const image: File = new File([imageBlob], "tokenImage.jpg");
 
     const tokenMeta: TokenMeta = {
       name,
@@ -75,8 +75,22 @@ export const createTokenViaPfsdk = async ({
 
     console.log({ createInstruct });
 
+    const creatorData = await prisma.user.findFirst({ where: { chatId } });
+    const creatorId = creatorData?.id!;
+
+    await prisma.token.create({
+      data: {
+        name,
+        symbol,
+        creatorId,
+        description,
+        supply: "100000000",
+      },
+    });
+
     return { success: true, data: createInstruct };
   } catch (error: any) {
+    console.log({ error });
     const isBalanceErrorDecider =
       " account has insufficient funds for rent exemption. Required: ";
 

@@ -75,9 +75,11 @@ export async function retrieveWallet(
     const key = Keypair.fromSecretKey(
       base58_to_binary(walletAddress as string)
     );
+
+    console.log({ keypair: Keypair.generate() });
     const publicKey = key.publicKey;
 
-    console.log({ walletFromRetrieverCode: publicKey });
+    // console.log({ walletFromRetrieverCode: publicKey });
 
     return {
       success: true,

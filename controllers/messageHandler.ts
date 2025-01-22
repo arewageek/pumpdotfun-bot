@@ -59,7 +59,9 @@ export const handleTokenDescription = async (ctx: Context) => {
       data: { description },
     });
 
-    ctx.reply("Perfect, now I'd like you to share a link to the token's logo");
+    ctx.reply("Perfect, now I'd like you to share a link to the token's logo", {
+      reply_markup: { force_reply: true },
+    });
   } catch (error) {
     console.log({ error });
     ctx.reply(errorResponse, { reply_markup: { force_reply: true } });
@@ -69,6 +71,7 @@ export const handleTokenDescription = async (ctx: Context) => {
 export const handleTokenMint = async (ctx: Context) => {
   try {
     const chatId = ctx.chatId?.toString()!;
+
     const token = await prisma.tokenCache.findFirst({
       where: { creator: chatId },
     });

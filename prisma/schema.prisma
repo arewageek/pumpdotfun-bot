@@ -21,7 +21,7 @@ model Token {
   id          Int    @id @default(autoincrement())
   name        String
   symbol      String
-  supply      String
+  supply      String?
   description String @default("")
 
   creator   User @relation(fields: [creatorId], references: [id])
