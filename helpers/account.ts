@@ -2,11 +2,7 @@ import { Keypair, PublicKey } from "@solana/web3.js";
 import prisma from "../lib/prisma";
 import { jwtDecrypt, jwtEncrypt } from "../utils/jwt";
 import { base58_to_binary, binary_to_base58 } from "base58-js";
-
-export interface IWallet {
-  private: Uint8Array;
-  public: PublicKey;
-}
+import type { IWallet } from "../interface";
 
 export async function createWallet(chatId: number): Promise<{
   success: boolean;
@@ -56,35 +52,38 @@ export async function importWallet(keyPhrase: string): Promise<{
   }
 }
 
-export async function retrieveWallet(
-  chatId: number
-): Promise<{ success: boolean; message?: string; data?: IWallet }> {
+export async function retrieveWallet(chatId: number): Promise<{
+  success: boolean;
+  message?: string;
+  data?: IWallet;
+  isNewWallet?: boolean;
+}> {
   try {
     const user = await prisma.user.findUnique({
       where: { chatId: chatId.toString() },
     });
-    let walletAddress;
+    let walletToken;
+    let isNewWallet = false;
 
     if (!user) {
       const create = await createWallet(chatId);
-      walletAddress = create.data?.private;
+      walletToken = create.data?.private;
+      isNewWallet = true;
     } else {
-      walletAddress = await jwtDecrypt(user.wallet.valueOf());
+      walletToken = (await jwtDecrypt(user.wallet)).valueOf();
     }
 
-    const key = Keypair.fromSecretKey(
-      base58_to_binary(walletAddress as string)
-    );
+    const key = Keypair.fromSecretKey(base58_to_binary(walletToken as string));
 
-    console.log({ keypair: Keypair.generate() });
     const publicKey = key.publicKey;
 
-    // console.log({ walletFromRetrieverCode: publicKey });
-
-    return {
+    const response = {
       success: true,
-      data: { public: publicKey, private: key.secretKey },
+      data: { public: publicKey, token: walletToken as string },
+      isNewWallet: isNewWallet,
     };
+
+    return response;
   } catch (error: any) {
     console.error("Error retrieving wallet: ", error);
     return {

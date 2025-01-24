@@ -1,12 +1,8 @@
 import { InlineKeyboard, type Context } from "grammy";
-import { createToken, getProvider } from "../helpers/pumpfun";
-import { PumpFunSDK } from "pumpdotfun-sdk";
-import { Keypair } from "@solana/web3.js";
-import { createWallet, retrieveWallet } from "../helpers/account";
-import { createTokenViaPfsdk } from "../helpers/pfsdk";
-import { format } from "../utils/number-formatter";
+import { retrieveWallet } from "../helpers/account";
 import { botResponses } from "../utils/responses";
-import prisma from "../lib/prisma";
+import { store } from "./messageHandler";
+import type { IWallet } from "../interface";
 
 // start-bot context
 export const StartContext = async (ctx: Context) => {
@@ -38,21 +34,7 @@ export const StartTokenCreationContext = async (ctx: Context) => {
   });
 };
 
-// create-token context
-export const CreateTokenContext = async (ctx: Context) => {};
-
-export const TokenNameContext = (ctx: Context) => {
-  ctx.reply("What is the name of your token?");
-};
-export const TokenSymbolContext = (ctx: Context) => {
-  ctx.reply("What is the symbol for the token");
-};
-export const TokenDescriptionContext = (ctx: Context) => {
-  ctx.reply("Share a small story behind your token");
-};
-
 // wallet context
-
 export const WalletContext = async (ctx: Context) => {
   try {
     const chatId = ctx.chat?.id;
@@ -61,25 +43,31 @@ export const WalletContext = async (ctx: Context) => {
       throw new Error("Chat ID not found");
     }
 
-    const walletResult = await retrieveWallet(chatId);
+    let walletResult: IWallet;
+    let message: string;
 
-    if (walletResult.success && walletResult.data) {
-      const walletAddress = walletResult.data.public;
-      const message = `🪙 Your wallet address: \`${walletAddress}\``;
-      await ctx.reply(message, { parse_mode: "MarkdownV2" });
-    } else {
-      const newWalletResult = await createWallet(chatId);
+    if (!store.has("wallet")) {
+      const wallet = await retrieveWallet(chatId);
+      store.write("wallet", wallet);
+      walletResult = wallet.data!;
 
-      if (newWalletResult.success && newWalletResult.data) {
-        const newWalletAddress = newWalletResult.data.public.toString();
-        const message = `🎉 A new wallet has been created for you! \n🪙 Wallet address: \`${newWalletAddress}\``;
-        await ctx.reply(message, { parse_mode: "Markdown" });
+      if (wallet.success && wallet.data) {
+        console.log("Fetched from server!!");
+        message = wallet.isNewWallet
+          ? `🎉 A new wallet has been created for you! \n🪙 Wallet address: \`${wallet.data.public}\``
+          : `🪙 Your wallet address: \`${wallet.data.public}\``;
+
+        store.write("wallet", walletResult);
       } else {
-        throw new Error(
-          newWalletResult.message || "Failed to create a new wallet"
-        );
+        throw new Error("Failed to create a new wallet");
       }
+    } else {
+      walletResult = store.read("wallet") as IWallet;
+      console.log("Fetched locally!!");
+      message = `🪙 Your wallet address: \`${walletResult.public}\``;
     }
+
+    await ctx.reply(message, { parse_mode: "Markdown" });
   } catch (error) {
     console.error({ walletContextError: error });
     await ctx.reply("❌ An error occurred while accessing the wallet.");

@@ -92,8 +92,6 @@ export const createTokenViaPfsdk = async ({
       tokenMeta,
     });
 
-    console.log({ createInstruct });
-
     const creatorData = await prisma.user.findFirst({ where: { chatId } });
     const creatorId = creatorData?.id!;
 
@@ -144,7 +142,7 @@ export const createTokenViaPfsdk = async ({
         : "An error occurred during token creation",
       data: {
         wallet,
-        required: Number(required) / LAMPORTS_PER_SOL,
+        required: Number(required) / LAMPORTS_PER_SOL + amount,
         available: Number(available) / LAMPORTS_PER_SOL,
       },
     };
