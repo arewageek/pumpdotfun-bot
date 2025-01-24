@@ -1,10 +1,15 @@
-import { InlineKeyboard, type Context } from "grammy";
-import { createTokenViaPfsdk } from "../helpers/pfsdk";
+import { InlineKeyboard, MemorySessionStorage, type Context } from "grammy";
+import { buyToken, createTokenViaPfsdk } from "../helpers/pfsdk";
 import { format } from "../utils/number-formatter";
 import prisma from "../lib/prisma";
+import { botResponses } from "../utils/responses";
 
-const errorResponse =
-  "Sorry i didn' catch that. Let's start all over ─── What's the name of the token?";
+interface ITokenBuyStore {
+  ca?: string;
+  amount?: string;
+}
+
+const store = new MemorySessionStorage();
 
 export const handleTokenName = async (ctx: Context) => {
   try {
@@ -15,12 +20,12 @@ export const handleTokenName = async (ctx: Context) => {
       data: { creator: chatId?.toString(), name },
     });
 
-    await ctx.reply("What is the symbol of your token?", {
+    await ctx.reply(botResponses.symbol, {
       reply_markup: { force_reply: true },
     });
   } catch (error) {
     console.log({ error });
-    ctx.reply(errorResponse, { reply_markup: { force_reply: true } });
+    ctx.reply(botResponses.error, { reply_markup: { force_reply: true } });
   }
 };
 
@@ -37,12 +42,11 @@ export const handleTokenSymbol = async (ctx: Context) => {
       data: { symbol },
     });
 
-    ctx.reply(
-      "Cool, now I'd like you to share a little story about your project",
-      { reply_markup: { force_reply: true } }
-    );
+    ctx.reply(botResponses.description, {
+      reply_markup: { force_reply: true },
+    });
   } catch (error) {
-    ctx.reply(errorResponse, { reply_markup: { force_reply: true } });
+    ctx.reply(botResponses.error, { reply_markup: { force_reply: true } });
   }
 };
 
@@ -59,12 +63,34 @@ export const handleTokenDescription = async (ctx: Context) => {
       data: { description },
     });
 
-    ctx.reply("Perfect, now I'd like you to share a link to the token's logo", {
+    ctx.reply(botResponses.image, {
       reply_markup: { force_reply: true },
     });
   } catch (error) {
     console.log({ error });
-    ctx.reply(errorResponse, { reply_markup: { force_reply: true } });
+    ctx.reply(botResponses.error, { reply_markup: { force_reply: true } });
+  }
+};
+
+export const handleTokenLogo = async (ctx: Context) => {
+  try {
+    const url = ctx.message?.text;
+    const chatId = ctx.chatId?.toString()!;
+
+    const token = await prisma.tokenCache.findFirst({
+      where: { creator: chatId },
+    });
+
+    await prisma.tokenCache.update({
+      where: { id: token?.id },
+      data: { image: url },
+    });
+
+    ctx.reply(botResponses.image, { reply_markup: { force_reply: true } });
+  } catch (error) {
+    console.log({ error });
+
+    ctx.reply(botResponses.mint, { reply_markup: { force_reply: true } });
   }
 };
 
@@ -85,13 +111,14 @@ export const handleTokenMint = async (ctx: Context) => {
       name: token?.name!,
       symbol: token?.symbol!,
       description: token?.description!,
-      imageUri: ctx.message?.text!,
+      imageUri: token?.image!,
+      amount: Number(ctx.message?.text),
     });
 
     let reply = "";
 
     if (response.success) {
-      reply = `🎉 Token created successfully! View it here: https://pump.fun/${response.data}`;
+      reply = `🎉 Token created successfully! View it here: https://pump.fun/${response.data.tokenAddress}`;
     } else {
       reply = `❌ Your wallet (\*${response.data.wallet.slice(
         0,
@@ -106,5 +133,65 @@ export const handleTokenMint = async (ctx: Context) => {
   } catch (error) {
     console.error({ createTokenError: error });
     await ctx.reply("❌ An error occurred while creating the token.");
+  }
+};
+
+export const handleTokenCA = async (ctx: Context) => {
+  try {
+    const ca = ctx.message?.text;
+
+    store.delete("token-buy");
+    store.write("token-buy", { ca });
+
+    // await prisma.tokenBuySession.create({
+    //   data: { tokenCA: ca, chatId: ctx.chatId?.toString()! },
+    // });
+
+    ctx.reply(botResponses.tokenBuyAmount, {
+      reply_markup: { force_reply: true },
+    });
+  } catch (error) {
+    console.log({ error });
+    ctx.reply(botResponses.error, { reply_markup: { force_reply: true } });
+  }
+};
+
+export const handleTokenBuyAmount = async (ctx: Context) => {
+  try {
+    const amount = ctx.message?.text;
+
+    if (!store.has("token-buy")) {
+      return ctx.reply("Please provide the token's contract address first");
+    } else {
+      const prev = store.read("token-buy") as ITokenBuyStore;
+      prev.amount = amount;
+      store.write("token-buy", prev);
+    }
+
+    // console.log({ store: store.readAllEntries()[0] });
+
+    // return;
+
+    // const token = await prisma.tokenBuySession.findFirst({
+    //   where: { chatId: ctx.chatId?.toString()! },
+    // });
+    // const trader = await prisma.user.findFirst({
+    //   where: { chatId: ctx.chatId?.toString()! },
+    // });
+
+    const response = await buyToken({
+      trader: trader?.wallet as string,
+      token: token?.tokenCA!,
+      amount: Number(amount),
+      isInitialBuy: false,
+      isFormatted: false,
+    });
+
+    if (response.success) {
+      ctx.reply("Token purchase was successful!!");
+    }
+  } catch (error) {
+    console.log({ error });
+    ctx.reply(botResponses.error, { reply_markup: { force_reply: true } });
   }
 };

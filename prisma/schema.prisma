@@ -18,11 +18,11 @@ model User {
 }
 
 model Token {
-  id          Int    @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   name        String
   symbol      String
   supply      String?
-  description String @default("")
+  description String  @default("")
 
   creator   User @relation(fields: [creatorId], references: [id])
   creatorId Int
@@ -34,4 +34,12 @@ model TokenCache {
   name        String
   symbol      String?
   description String?
+  image       String?
+}
+
+model TokenBuySession {
+  id          Int     @id @default(autoincrement())
+  chatId      String
+  tokenCA     String?
+  tokenAmount Int?
 }

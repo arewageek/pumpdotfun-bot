@@ -5,6 +5,8 @@ import { Keypair } from "@solana/web3.js";
 import { createWallet, retrieveWallet } from "../helpers/account";
 import { createTokenViaPfsdk } from "../helpers/pfsdk";
 import { format } from "../utils/number-formatter";
+import { botResponses } from "../utils/responses";
+import prisma from "../lib/prisma";
 
 // start-bot context
 export const StartContext = async (ctx: Context) => {
@@ -19,7 +21,9 @@ export const StartContext = async (ctx: Context) => {
     ctx.reply(welcomMessage, {
       parse_mode: "MarkdownV2",
       reply_markup: new InlineKeyboard()
-        .text("Wallet 🟢", "wallet")
+        .text("Wallet 💳", "wallet")
+        .text("Buy Token 🟢", "buy-token")
+        .row()
         .text("Create Token 📈", "start-create"),
     });
   } catch (error) {
@@ -80,4 +84,10 @@ export const WalletContext = async (ctx: Context) => {
     console.error({ walletContextError: error });
     await ctx.reply("❌ An error occurred while accessing the wallet.");
   }
+};
+
+export const BuyTokenCallback = (ctx: Context) => {
+  ctx.reply(botResponses.tokenCA, {
+    reply_markup: { force_reply: true },
+  });
 };

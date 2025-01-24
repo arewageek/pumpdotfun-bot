@@ -2,17 +2,21 @@ import express from "express";
 import { Bot } from "grammy";
 import { run } from "@grammyjs/runner";
 import {
+  BuyTokenCallback,
   CreateTokenContext,
   StartContext,
   StartTokenCreationContext,
   WalletContext,
 } from "../controllers/callbackQueries";
 import {
+  handleTokenBuyAmount,
+  handleTokenCA,
   handleTokenDescription,
   handleTokenMint,
   handleTokenName,
   handleTokenSymbol,
 } from "../controllers/messageHandler";
+import { botResponses } from "../utils/responses";
 
 const router = express.Router();
 
@@ -34,24 +38,33 @@ const getBotInstance = () => {
         isReply = !!repliedTo;
 
         switch (repliedTo) {
-          case "What is the name of this token you want to create?":
+          case botResponses.name:
             await handleTokenName(ctx);
             break;
 
-          case "Sorry i didn' catch that. Let's start all over ─── What's the name of the token?":
+          case botResponses.error:
             await handleTokenName(ctx);
             break;
 
-          case "What is the symbol of your token?":
+          case botResponses.symbol:
             await handleTokenSymbol(ctx);
             break;
 
-          case "Cool, now I'd like you to share a little story about your project":
+          case botResponses.description:
             await handleTokenDescription(ctx);
             break;
 
-          case "Perfect, now I'd like you to share a link to the token's logo":
+          case botResponses.image:
             await handleTokenMint(ctx);
+            break;
+
+          // handle token buy
+          case botResponses.tokenCA:
+            await handleTokenCA(ctx);
+            break;
+
+          case botResponses.tokenBuyAmount:
+            await handleTokenBuyAmount(ctx);
             break;
 
           default:
@@ -65,6 +78,7 @@ const getBotInstance = () => {
       //   pumpdotfun callbacks
       bot.callbackQuery("create", CreateTokenContext);
       bot.callbackQuery("start-create", StartTokenCreationContext);
+      bot.callbackQuery("buy-token", BuyTokenCallback);
 
       // wallet callbacks
       bot.callbackQuery("wallet", WalletContext);

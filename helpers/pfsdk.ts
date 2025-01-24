@@ -7,7 +7,25 @@ import {
 } from "@solana/web3.js";
 import prisma from "../lib/prisma";
 import { jwtDecrypt } from "../utils/jwt";
-import { base58_to_binary } from "base58-js";
+import { base58_to_binary, binary_to_base58 } from "base58-js";
+
+/**
+  Interface for token buys
+**/
+interface ITokenBuyParams {
+  trader: string | Keypair;
+  token: string | Keypair;
+  amount: number;
+  isFormatted?: boolean;
+  isInitialBuy: boolean;
+}
+
+export const initialize = async () => {
+  const connection = new Connection(clusterApiUrl("mainnet-beta"));
+  const fun = new Fun(connection);
+
+  return { connection, fun };
+};
 
 export const createTokenViaPfsdk = async ({
   chatId,
@@ -15,12 +33,14 @@ export const createTokenViaPfsdk = async ({
   symbol,
   description,
   imageUri,
+  amount,
 }: {
   chatId: string;
   name: string;
   symbol: string;
   description: string;
   imageUri: string;
+  amount: number;
 }): Promise<{
   success: boolean;
   data?: any;
@@ -55,10 +75,6 @@ export const createTokenViaPfsdk = async ({
     };
 
     console.log({ tokenMeta });
-
-    const connection = new Connection(clusterApiUrl("mainnet-beta"));
-    const fun = new Fun(connection);
-
     /**
      * If insufficient SOL is provided, the function will throw an error
      *
@@ -68,6 +84,9 @@ export const createTokenViaPfsdk = async ({
      *
      * ex. Transaction | VersionedTransaction
      * **/
+
+    const { fun } = await initialize();
+
     const createInstruct = await fun.compileCreateTokenInstruction({
       creator: creator.publicKey,
       tokenMeta,
@@ -87,6 +106,21 @@ export const createTokenViaPfsdk = async ({
         supply: "100000000",
       },
     });
+
+    const handleTokenBuy = await buyToken({
+      trader: creator as Keypair,
+      token,
+      amount,
+      isFormatted: true,
+      isInitialBuy: true,
+    });
+
+    if (!handleTokenBuy.success) {
+      return {
+        success: true,
+        message: "Token mint was successful but faile to initiate purchase",
+      };
+    }
 
     return { success: true, data: createInstruct };
   } catch (error: any) {
@@ -115,4 +149,56 @@ export const createTokenViaPfsdk = async ({
       },
     };
   }
+};
+
+export const buyToken = async ({
+  trader,
+  token,
+  amount,
+  isFormatted,
+  isInitialBuy = false,
+}: ITokenBuyParams): Promise<{
+  success: boolean;
+  data?: any;
+  message?: string;
+}> => {
+  try {
+    const { fun } = await initialize();
+
+    let traderKeypair: Keypair, tokenKeypair: Keypair, amountFormatted: BigInt;
+    if (!isFormatted) {
+      traderKeypair = jwtTokenToKeypair(trader as string);
+      tokenKeypair = jwtTokenToKeypair(token as string);
+      amountFormatted = BigInt(amount);
+    } else {
+      traderKeypair = trader as Keypair;
+      tokenKeypair = token as Keypair;
+      amountFormatted = BigInt(amount);
+    }
+
+    const buy = await fun.compileBuyInstruction(
+      {
+        trader: traderKeypair.publicKey,
+        token: tokenKeypair.publicKey,
+        solAmount: BigInt(amount * LAMPORTS_PER_SOL),
+      },
+      isInitialBuy
+    );
+
+    return { success: true, data: buy };
+  } catch (error) {
+    console.log({ error });
+    return {
+      success: false,
+      message: "An error occurred during token purchase",
+    };
+  }
+};
+
+// handle conversions
+export const jwtTokenToKeypair = (jwtToken?: string) => {
+  const secretKey = jwtDecrypt(jwtToken!);
+  const keypair = Keypair.fromSecretKey(base58_to_binary(secretKey.toString()));
+
+  return keypair;
 };
