@@ -65,9 +65,57 @@ export const handleTokenLogo = async (ctx: Context) => {
     const prev = store.read("token-create") as ITokenCreateStore;
     store.write("token-create", { ...prev, image: url });
 
-    ctx.reply(botResponses.image, { reply_markup: { force_reply: true } });
+    ctx.reply(botResponses.twitter, { reply_markup: { force_reply: true } });
   } catch (error) {
-    ctx.reply(botResponses.mint, { reply_markup: { force_reply: true } });
+    ctx.reply(botResponses.error, { reply_markup: { force_reply: true } });
+  }
+};
+
+// request twitter handle
+export const handleTwitterLink = async (ctx: Context) => {
+  try {
+    const twitter = ctx.message?.text;
+
+    if (!store.has("token-create")) throw new Error(botResponses.error2);
+
+    const prev = store.read("token-create") as ITokenCreateStore;
+    store.write("token-create", { ...prev, twitter });
+
+    ctx.reply(botResponses.telegram, { reply_markup: { force_reply: true } });
+  } catch (error) {
+    ctx.reply(botResponses.error, { reply_markup: { force_reply: true } });
+  }
+};
+
+// request telegram community link
+export const handleTelegramLink = async (ctx: Context) => {
+  try {
+    const telegram = ctx.message?.text;
+
+    if (!store.has("token-create")) throw new Error(botResponses.error2);
+
+    const prev = store.read("token-create") as ITokenCreateStore;
+    store.write("token-create", { ...prev, telegram });
+
+    ctx.reply(botResponses.website, { reply_markup: { force_reply: true } });
+  } catch (error) {
+    ctx.reply(botResponses.error, { reply_markup: { force_reply: true } });
+  }
+};
+
+// request website link
+export const handleWebsiteLink = async (ctx: Context) => {
+  try {
+    const url = ctx.message?.text;
+
+    if (!store.has("token-create")) throw new Error(botResponses.error2);
+
+    const prev = store.read("token-create") as ITokenCreateStore;
+    store.write("token-create", { ...prev, website: url });
+
+    ctx.reply(botResponses.initialBuy, { reply_markup: { force_reply: true } });
+  } catch (error) {
+    ctx.reply(botResponses.error, { reply_markup: { force_reply: true } });
   }
 };
 

@@ -8,12 +8,16 @@ import {
   WalletContext,
 } from "../controllers/callbackQueries";
 import {
+  handleTelegramLink,
   handleTokenBuyAmount,
   handleTokenCA,
   handleTokenDescription,
+  handleTokenLogo,
   handleTokenMint,
   handleTokenName,
   handleTokenSymbol,
+  handleTwitterLink,
+  handleWebsiteLink,
 } from "../controllers/messageHandler";
 import { botResponses } from "../utils/responses";
 
@@ -54,6 +58,22 @@ const getBotInstance = () => {
             break;
 
           case botResponses.image:
+            await handleTokenLogo(ctx);
+            break;
+
+          case botResponses.twitter:
+            await handleTwitterLink(ctx);
+            break;
+
+          case botResponses.telegram:
+            await handleTelegramLink(ctx);
+            break;
+
+          case botResponses.website:
+            await handleWebsiteLink(ctx);
+            break;
+
+          case botResponses.initialBuy:
             await handleTokenMint(ctx);
             break;
 

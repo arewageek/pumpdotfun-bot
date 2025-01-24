@@ -34,6 +34,9 @@ export const createTokenViaPfsdk = async ({
   description,
   imageUri,
   amount,
+  website,
+  telegram,
+  twitter,
 }: {
   chatId: string;
   name: string;
@@ -41,6 +44,9 @@ export const createTokenViaPfsdk = async ({
   description: string;
   imageUri: string;
   amount: number;
+  twitter?: string;
+  telegram?: string;
+  website?: string;
 }): Promise<{
   success: boolean;
   data?: any;
@@ -72,6 +78,9 @@ export const createTokenViaPfsdk = async ({
       image,
       keypair: token,
       // socials if any...
+      twitter,
+      telegram,
+      website,
     };
 
     console.log({ tokenMeta });
