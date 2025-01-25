@@ -2,7 +2,7 @@ import express from "express";
 import { Bot } from "grammy";
 import { run } from "@grammyjs/runner";
 import {
-  BuyTokenCallback,
+  BuyTokenContext,
   StartContext,
   StartTokenCreationContext,
   WalletContext,
@@ -33,6 +33,9 @@ const getBotInstance = () => {
       bot = new Bot(botToken);
 
       bot.command("start", StartContext);
+      bot.command("create", StartTokenCreationContext);
+      bot.command("wallet", WalletContext);
+      bot.command("buy", BuyTokenContext);
 
       // custom commands sent to the bot
       bot.on("message", async (ctx) => {
@@ -96,7 +99,7 @@ const getBotInstance = () => {
 
       //   pumpdotfun callbacks
       bot.callbackQuery("start-create", StartTokenCreationContext);
-      bot.callbackQuery("buy-token", BuyTokenCallback);
+      bot.callbackQuery("buy-token", BuyTokenContext);
 
       // wallet callbacks
       bot.callbackQuery("wallet", WalletContext);

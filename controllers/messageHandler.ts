@@ -132,6 +132,9 @@ export const handleTokenMint = async (ctx: Context) => {
       description: token?.description!,
       imageUri: token?.image!,
       amount: Number(ctx.message?.text),
+      twitter: token?.twitter,
+      telegram: token?.telegram,
+      website: token?.website,
     });
 
     let reply = "";

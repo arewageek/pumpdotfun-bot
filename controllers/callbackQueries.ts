@@ -9,18 +9,19 @@ export const StartContext = async (ctx: Context) => {
   try {
     const sender = ctx.chat?.first_name;
 
+    // const replyMarkup = reply_markup: new InlineKeyboard()
+    //     .text("Wallet 💳", "wallet")
+    //     .text("Buy Token 🟢", "buy-token")
+    //     .row()
+    //     .text("Create Token 📈", "start-create"),
+
     const welcomMessage = `\*Hey, ${sender}, Welcome to Solana Token Minter\* 🤗
         \nThis bots let's you create and trade solana meme tokens right from telegram, taking away the complexities involved with interacting with this token
-        \nYou can interact with this bot using the commands made available for you below
+        \nTap on the menu button below to start using the bot
         `;
 
     ctx.reply(welcomMessage, {
       parse_mode: "MarkdownV2",
-      reply_markup: new InlineKeyboard()
-        .text("Wallet 💳", "wallet")
-        .text("Buy Token 🟢", "buy-token")
-        .row()
-        .text("Create Token 📈", "start-create"),
     });
   } catch (error) {
     console.log({ startMessageError: error });
@@ -74,7 +75,7 @@ export const WalletContext = async (ctx: Context) => {
   }
 };
 
-export const BuyTokenCallback = (ctx: Context) => {
+export const BuyTokenContext = (ctx: Context) => {
   ctx.reply(botResponses.tokenCA, {
     reply_markup: { force_reply: true },
   });
