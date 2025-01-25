@@ -1,4 +1,4 @@
-import express from "express";
+import express, { type Request, type Response } from "express";
 import { Bot } from "grammy";
 import { run } from "@grammyjs/runner";
 import {
@@ -22,6 +22,10 @@ import {
 import { botResponses } from "../utils/responses";
 
 const router = express.Router();
+
+router.get("/keep-alive", (req: Request, res: Response) => {
+  res.json({ status: 200 });
+});
 
 const botToken = process.env.TG_BOT_API!;
 
