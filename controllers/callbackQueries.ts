@@ -4,17 +4,18 @@ import { botResponses } from "../utils/responses";
 import { handleTokenMint, store } from "./messageHandler";
 import type { IWallet } from "../interface";
 import { createAndBuyToken } from "../helpers/mint";
+import { format } from "../utils/number-formatter";
 
 // start-bot context
 export const StartContext = async (ctx: Context) => {
   try {
     const sender = ctx.chat?.first_name;
 
-    const reply_markup = new InlineKeyboard()
-      // .text("Wallet 💳", "wallet")
-      //     .text("Buy Token 🟢", "buy-token")
-      //     .row()
-      .text("Create Token 📈", "create");
+    const reply_markup = new InlineKeyboard();
+    // .text("Wallet 💳", "wallet")
+    //     .text("Buy Token 🟢", "buy-token")
+    //     .row()
+    // .text("Create Token 📈", "create");
 
     const welcomMessage = `\*Hey, ${sender}, Welcome to Solana Token Minter\* 🤗
         \nThis bots let's you create and trade solana meme tokens right from telegram, taking away the complexities involved with interacting with this token
@@ -46,28 +47,33 @@ export const WalletContext = async (ctx: Context) => {
       throw new Error("Chat ID not found");
     }
 
-    let walletResult: IWallet;
+    let walletResult: IWallet & { balance?: number };
     let message: string;
 
     if (!store.has("wallet")) {
-      const wallet = await retrieveWallet(chatId);
+      const wallet = await retrieveWallet(chatId); // Updated to retrieve balance too
       store.write("wallet", wallet);
       walletResult = wallet.data!;
 
       if (wallet.success && wallet.data) {
         console.log("Fetched from server!!");
+        const balance = walletResult.balance || 0; // Ensure balance exists
+
         message = wallet.isNewWallet
-          ? `🎉 A new wallet has been created for you! \n🪙 Wallet address: \`${wallet.data.public}\``
-          : `🪙 Your wallet address: \`${wallet.data.public}\``;
+          ? `🎉 A new wallet has been created for you! \n🪙 Wallet address: \`${wallet.data.public}\` \n💰 Balance: ${balance} SOL`
+          : `🪙 Your wallet address: \`${wallet.data.public}\` 
+          \n💰 Balance: ${format(balance, 6)} SOL`;
 
         store.write("wallet", walletResult);
       } else {
         throw new Error("Failed to create a new wallet");
       }
     } else {
-      walletResult = store.read("wallet") as IWallet;
+      walletResult = store.read("wallet") as IWallet & { balance?: number };
       console.log("Fetched locally!!");
-      message = `🪙 Your wallet address: \`${walletResult.public}\``;
+
+      const balance = walletResult.balance || 0; // Ensure balance exists
+      message = `🪙 Your wallet address: \`${walletResult.public}\` \n💰 Balance: ${balance} SOL`;
     }
 
     await ctx.reply(message, { parse_mode: "Markdown" });
@@ -83,8 +89,8 @@ export const BuyTokenContext = (ctx: Context) => {
   });
 };
 
-export const CreateTokenContext = async (ctx: Context) => {
-  // const response = await handleTokenMint(ctx);
-  const response = await createAndBuyToken();
-  ctx.reply("done");
-};
+// export const CreateTokenContext = async (ctx: Context) => {
+//   // const response = await handleTokenMint(ctx);
+//   const response = await createAndBuyToken();
+//   ctx.reply("done");
+// };

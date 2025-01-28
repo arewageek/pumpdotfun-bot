@@ -3,7 +3,6 @@ import { Bot } from "grammy";
 import { run } from "@grammyjs/runner";
 import {
   BuyTokenContext,
-  CreateTokenContext,
   StartContext,
   StartTokenCreationContext,
   WalletContext,
@@ -38,7 +37,7 @@ const getBotInstance = () => {
       bot = new Bot(botToken);
 
       bot.command("start", StartContext);
-      bot.command("create", CreateTokenContext);
+      bot.command("create", StartTokenCreationContext);
       bot.command("wallet", WalletContext);
       bot.command("buy", BuyTokenContext);
 
@@ -103,7 +102,7 @@ const getBotInstance = () => {
       });
 
       //   pumpdotfun callbacks
-      bot.callbackQuery("create", CreateTokenContext);
+      bot.callbackQuery("create", StartTokenCreationContext);
       bot.callbackQuery("buy-token", BuyTokenContext);
 
       // wallet callbacks

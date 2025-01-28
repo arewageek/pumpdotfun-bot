@@ -28,18 +28,42 @@ const initialize = () => {
   return { provider, sdk, connection };
 };
 
-export const createAndBuyToken = async () => {
-  const imagePath = path.resolve(__dirname, "../eye.jpg");
-  const imageBuffer = fs.readFileSync(imagePath);
-  const file: File = new File([imageBuffer], "tokenIage.jpg", {
-    type: "image/jpeg",
+export const createAndBuyToken = async ({
+  amount,
+  twitter,
+  telegram,
+  website,
+  name,
+  symbol,
+  description,
+  image,
+}: {
+  name: string;
+  symbol: string;
+  description: string;
+  image: string;
+  amount: number;
+  website?: string;
+  twitter?: string;
+  telegram?: string;
+}) => {
+  const imagePath = path.resolve(image);
+
+  const imageBuffer: Buffer = Buffer.from(imagePath, "utf-8");
+  const imageBlob: Blob = new Blob([imageBuffer], {
+    type: "images/jpg",
   });
 
+  const file: File = new File([imageBlob], "tokenImage.jpg");
+
   const tokenMetadata: CreateTokenMetadata = {
-    name: "Hopium",
-    symbol: "PIUM",
-    description: "Blood. Sweat. Tears",
+    name,
+    symbol,
+    description,
     file,
+    telegram,
+    twitter,
+    website,
   };
 
   const token = new Keypair();
@@ -54,18 +78,27 @@ export const createAndBuyToken = async () => {
     creator,
     token,
     tokenMetadata,
-    BigInt(0.0001 * LAMPORTS_PER_SOL),
+    BigInt(amount * LAMPORTS_PER_SOL),
     SLIPPAGE_BASIS_POINTS,
     {
-      unitLimit: 250000,
-      unitPrice: 250000,
+      unitLimit: 25000,
+      unitPrice: 25000,
     }
   );
 
   if (createResults.success) {
     console.log("Success:", `https://pump.fun/${token.publicKey.toBase58()}`);
-    // printSPLBalance(sdk.connection, mint.publicKey, testAccount.publicKey);
+    // printSPLBalance(sdk.connection, token.publicKey, creator.publicKey);
+    return {
+      success: true,
+      message: `https://pump.fun/${token.publicKey.toBase58()}`,
+    };
   } else {
     console.log("Create and Buy failed");
+
+    return {
+      success: false,
+      message: "❌ Transaction failed due to insufficient balance",
+    };
   }
 };

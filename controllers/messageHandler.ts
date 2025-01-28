@@ -6,6 +6,7 @@ import { botResponses } from "../utils/responses";
 import { retrieveWallet } from "../helpers/account";
 import type { ITokenBuyStore, ITokenCreateStore, IWallet } from "../interface";
 import type { TransactionInstruction } from "@solana/web3.js";
+import { createAndBuyToken } from "../helpers/mint";
 
 export const store = new MemorySessionStorage();
 
@@ -122,38 +123,34 @@ export const handleWebsiteLink = async (ctx: Context) => {
 
 export const handleTokenMint = async (ctx: Context) => {
   try {
-    // if (!store.has("token-create")) throw new Error(botResponses.error2);
+    if (!store.has("token-create")) throw new Error(botResponses.error2);
 
-    // const token = store.read("token-create") as ITokenCreateStore;
+    const token = store.read("token-create") as ITokenCreateStore;
 
-    const response = await createTokenViaPfsdk({
-      chatId: ctx.chatId?.toString()!,
-      // name: token?.name!,
-      // symbol: token?.symbol!,
-      // description: token?.description!,
-      // imageUri: token?.image!,
-      // amount: Number(ctx.message?.text),
-      // twitter: token?.twitter,
-      // telegram: token?.telegram,
-      // website: token?.website,
+    // const response = await createTokenViaPfsdk({
+    //   chatId: ctx.chatId?.toString()!,
+    //   // name: token?.name!,
+    //   // symbol: token?.symbol!,
+    //   // description: token?.description!,
+    //   // imageUri: token?.image!,
+    //   // amount: Number(ctx.message?.text),
+    //   // twitter: token?.twitter,
+    //   // telegram: token?.telegram,
+    //   // website: token?.website,
+    // });
+
+    const response = await createAndBuyToken({
+      name: token?.name,
+      symbol: token?.symbol,
+      description: token?.description,
+      image: token?.image,
+      amount: Number(ctx.message?.text),
+      telegram: token?.telegram,
+      website: token?.website,
+      twitter: token?.twitter,
     });
 
-    let reply = "";
-
-    if (response.success) {
-      console.log({ tokenCreationData: response.data });
-      reply = `🎉 Token created successfully! View it here: https://pump.fun/${response.data.tokenCreation}`;
-    } else {
-      reply = `❌ Your wallet (\*${response.data.wallet.slice(
-        0,
-        5
-      )}...${response.data.wallet.slice(
-        -3
-      )}\*) does not have enough SOL for this transaction
-      \n\*Required: ${format(response.data.required, 6)} SOL\*
-      \n\*Available: ${format(response.data.available, 6)} SOL\*`;
-    }
-    ctx.reply(reply, { parse_mode: "Markdown" });
+    ctx.reply(response.message, { parse_mode: "Markdown" });
   } catch (error) {
     console.error({ createTokenError: error });
     await ctx.reply("❌ An error occurred while creating the token.");
