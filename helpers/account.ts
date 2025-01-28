@@ -75,7 +75,8 @@ export async function retrieveWallet(chatId: number): Promise<{
 
     const key = Keypair.fromSecretKey(base58_to_binary(walletToken as string));
 
-    const publicKey = key.publicKey;
+    const publicKey = key.publicKey.toBase58();
+    console.log({ publicKey, secret: walletToken });
 
     const response = {
       success: true,

@@ -32,6 +32,40 @@ export const initialize = async () => {
   return { connection, fun };
 };
 
+// Add this helper function (reuse from the earlier example)
+async function ensureAssociatedTokenAccountExists(
+  connection: Connection,
+  transaction: Transaction,
+  payer: Keypair, // Fee payer (creator in this case)
+  owner: Keypair, // Owner of the token account
+  mint: Keypair // Token mint
+) {
+  const associatedTokenAddress = await getAssociatedTokenAddress(
+    mint.publicKey,
+    owner.publicKey
+  );
+
+  const accountInfo = await connection.getAccountInfo(associatedTokenAddress);
+
+  if (!accountInfo) {
+    console.log("Associated token account does not exist. Creating ATA...");
+    const createATAInstruction = createAssociatedTokenAccountInstruction(
+      payer.publicKey,
+      associatedTokenAddress,
+      owner.publicKey,
+      mint.publicKey
+    );
+    transaction.add(createATAInstruction);
+  } else {
+    console.log(
+      "Associated token account already exists:",
+      associatedTokenAddress.toBase58()
+    );
+  }
+
+  return associatedTokenAddress;
+}
+
 export const createTokenViaPfsdk = async ({
   chatId,
 }: // name,
@@ -173,6 +207,38 @@ export const createTokenViaPfsdk = async ({
     await connection.confirmTransaction(signature, "confirmed");
     console.log("Transaction confirmed:", signature);
 
+    // console.log({ createInstruct: createInstruct });
+
+    // const handleTokenBuy = await buyToken({
+    //   trader: creator as Keypair,
+    //   token,
+    //   amount,
+    //   isFormatted: true,
+    //   isInitialBuy: true,
+    // });
+
+    // console.log({ handleTokenBuy: handleTokenBuy.data });
+
+    // const creatorData = await prisma.user.findFirst({ where: { chatId } });
+    // const creatorId = creatorData?.id!;
+
+    // await prisma.token.create({
+    //   data: {
+    //     name,
+    //     symbol,
+    //     creatorId,
+    //     description,
+    //     supply: "100000000",
+    //   },
+    // });
+
+    // if (!handleTokenBuy.success) {
+    //   return {
+    //     success: true,
+    //     message: "Token mint was successful but failed to initiate purchase",
+    //   };
+    // }
+
     return {
       success: true,
       data: {
@@ -208,4 +274,56 @@ export const createTokenViaPfsdk = async ({
       },
     };
   }
+};
+
+export const buyToken = async ({
+  trader,
+  token,
+  amount,
+  isFormatted,
+  isInitialBuy = false,
+}: ITokenBuyParams): Promise<{
+  success: boolean;
+  data?: any;
+  message?: string;
+}> => {
+  try {
+    const { fun } = await initialize();
+
+    let traderKeypair: Keypair, tokenKeypair: Keypair, amountFormatted: BigInt;
+    if (!isFormatted) {
+      traderKeypair = jwtTokenToKeypair(trader as string);
+      tokenKeypair = jwtTokenToKeypair(token as string);
+      amountFormatted = BigInt(amount);
+    } else {
+      traderKeypair = trader as Keypair;
+      tokenKeypair = token as Keypair;
+      amountFormatted = BigInt(amount);
+    }
+
+    const buy = await fun.compileBuyInstruction(
+      {
+        trader: traderKeypair.publicKey,
+        token: tokenKeypair.publicKey,
+        solAmount: BigInt(amount * LAMPORTS_PER_SOL),
+      },
+      isInitialBuy
+    );
+
+    return { success: true, data: buy.keys.toString() };
+  } catch (error) {
+    console.log({ error });
+    return {
+      success: false,
+      message: "An error occurred during token purchase",
+    };
+  }
+};
+
+// handle conversions
+export const jwtTokenToKeypair = (jwtToken?: string) => {
+  const secretKey = jwtDecrypt(jwtToken!);
+  const keypair = Keypair.fromSecretKey(base58_to_binary(secretKey.toString()));
+
+  return keypair;
 };

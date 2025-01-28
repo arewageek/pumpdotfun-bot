@@ -1,10 +1,11 @@
 import { MemorySessionStorage, type Context } from "grammy";
-import { buyToken, createTokenViaPfsdk } from "../helpers/pfsdk";
+import { createTokenViaPfsdk } from "../helpers/pfsdk";
 import { format } from "../utils/number-formatter";
 import prisma from "../lib/prisma";
 import { botResponses } from "../utils/responses";
 import { retrieveWallet } from "../helpers/account";
 import type { ITokenBuyStore, ITokenCreateStore, IWallet } from "../interface";
+import type { TransactionInstruction } from "@solana/web3.js";
 
 export const store = new MemorySessionStorage();
 
@@ -121,26 +122,27 @@ export const handleWebsiteLink = async (ctx: Context) => {
 
 export const handleTokenMint = async (ctx: Context) => {
   try {
-    if (!store.has("token-create")) throw new Error(botResponses.error2);
+    // if (!store.has("token-create")) throw new Error(botResponses.error2);
 
-    const token = store.read("token-create") as ITokenCreateStore;
+    // const token = store.read("token-create") as ITokenCreateStore;
 
     const response = await createTokenViaPfsdk({
       chatId: ctx.chatId?.toString()!,
-      name: token?.name!,
-      symbol: token?.symbol!,
-      description: token?.description!,
-      imageUri: token?.image!,
-      amount: Number(ctx.message?.text),
-      twitter: token?.twitter,
-      telegram: token?.telegram,
-      website: token?.website,
+      // name: token?.name!,
+      // symbol: token?.symbol!,
+      // description: token?.description!,
+      // imageUri: token?.image!,
+      // amount: Number(ctx.message?.text),
+      // twitter: token?.twitter,
+      // telegram: token?.telegram,
+      // website: token?.website,
     });
 
     let reply = "";
 
     if (response.success) {
-      reply = `🎉 Token created successfully! View it here: https://pump.fun/${response.data.tokenAddress}`;
+      console.log({ tokenCreationData: response.data });
+      reply = `🎉 Token created successfully! View it here: https://pump.fun/${response.data.tokenCreation}`;
     } else {
       reply = `❌ Your wallet (\*${response.data.wallet.slice(
         0,
@@ -174,34 +176,29 @@ export const handleTokenCA = async (ctx: Context) => {
 };
 
 export const handleTokenBuyAmount = async (ctx: Context) => {
-  try {
-    const amount = ctx.message?.text;
-    const chatId = ctx.chatId!;
-    const tokenToBuy = store.read("token-buy") as ITokenBuyStore;
-
-    if (!store.has("token-buy"))
-      return ctx.reply("Please provide the token's contract address first");
-
-    const prev = store.read("token-buy") as ITokenBuyStore;
-    prev.amount = amount;
-    store.write("token-buy", prev);
-
-    const trader = store.has("wallet")
-      ? (store.read("wallet") as IWallet)
-      : (await retrieveWallet(chatId)).data;
-
-    const response = await buyToken({
-      trader: trader?.token as string,
-      token: tokenToBuy.ca as string,
-      amount: Number(amount),
-      isInitialBuy: false,
-      isFormatted: false,
-    });
-
-    if (response.success) {
-      ctx.reply("Token purchase was successful!!");
-    }
-  } catch (error) {
-    ctx.reply(botResponses.error, { reply_markup: { force_reply: true } });
-  }
+  // try {
+  //   const amount = ctx.message?.text;
+  //   const chatId = ctx.chatId!;
+  //   const tokenToBuy = store.read("token-buy") as ITokenBuyStore;
+  //   if (!store.has("token-buy"))
+  //     return ctx.reply("Please provide the token's contract address first");
+  //   const prev = store.read("token-buy") as ITokenBuyStore;
+  //   prev.amount = amount;
+  //   store.write("token-buy", prev);
+  //   const trader = store.has("wallet")
+  //     ? (store.read("wallet") as IWallet)
+  //     : (await retrieveWallet(chatId)).data;
+  //   // const response = await buyToken({
+  //   //   trader: trader?.token as string,
+  //   //   token: tokenToBuy.ca as string,
+  //   //   amount: Number(amount),
+  //   //   isInitialBuy: false,
+  //   //   isFormatted: false,
+  //   // });
+  //   if (response.success) {
+  //     ctx.reply("Token purchase was successful!!");
+  //   }
+  // } catch (error) {
+  //   ctx.reply(botResponses.error, { reply_markup: { force_reply: true } });
+  // }
 };
