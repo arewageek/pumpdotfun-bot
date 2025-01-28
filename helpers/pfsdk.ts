@@ -1,3 +1,6 @@
+import fs from "fs";
+import path from "path";
+
 import Fun, { type TokenMeta } from "pfsdk";
 import {
   Connection,
@@ -8,22 +11,7 @@ import {
 } from "@solana/web3.js";
 import prisma from "../lib/prisma";
 import { jwtDecrypt } from "../utils/jwt";
-import { base58_to_binary, binary_to_base58 } from "base58-js";
-import {
-  createAssociatedTokenAccountInstruction,
-  getAssociatedTokenAddress,
-} from "@solana/spl-token";
-
-/**
-  Interface for token buys
-**/
-interface ITokenBuyParams {
-  trader: string | Keypair;
-  token: string | Keypair;
-  amount: number;
-  isFormatted?: boolean;
-  isInitialBuy: boolean;
-}
+import { base58_to_binary } from "base58-js";
 
 export const initialize = async () => {
   const connection = new Connection(clusterApiUrl("mainnet-beta"));
@@ -34,24 +22,8 @@ export const initialize = async () => {
 
 export const createTokenViaPfsdk = async ({
   chatId,
-}: // name,
-// symbol,
-// description,
-// imageUri,
-// amount,
-// website,
-// telegram,
-// twitter,
-{
+}: {
   chatId: string;
-  // name: string;
-  // symbol: string;
-  // description: string;
-  // imageUri: string;
-  // amount: number;
-  // twitter?: string;
-  // telegram?: string;
-  // website?: string;
 }): Promise<{
   success: boolean;
   data?: any;
@@ -67,24 +39,11 @@ export const createTokenViaPfsdk = async ({
     const creator = keypair;
     const token = Keypair.generate();
 
-    const metaBuffer: Buffer = Buffer.from("../meow.jpeg", "utf-8");
-    const imageBlob: Blob = new Blob([metaBuffer], {
-      type: "images/jpg",
+    const imagePath = path.resolve(__dirname, "../eye.jpg");
+    const imageBuffer = fs.readFileSync(imagePath);
+    const image: File = new File([imageBuffer], "tokenIage.jpg", {
+      type: "image/jpeg",
     });
-
-    const image: File = new File([imageBlob], "tokenImage.jpg");
-
-    // const tokenMeta: TokenMeta = {
-    //   name,
-    //   symbol,
-    //   description,
-    //   image,
-    //   keypair: token,
-    //   // socials if any...
-    //   twitter,
-    //   telegram,
-    //   website,
-    // };
 
     const tokenMeta: TokenMeta = {
       name: "Hopium",
@@ -99,15 +58,6 @@ export const createTokenViaPfsdk = async ({
     };
 
     console.log({ tokenMeta });
-    /**
-     * If insufficient SOL is provided, the function will throw an error
-     *
-     * This will return a TransactionInstruction instance
-     * so you can freely assign the instruction to any type
-     * of transaction that you like.
-     *
-     * ex. Transaction | VersionedTransaction
-     * **/
 
     const { fun, connection } = await initialize();
 
@@ -115,16 +65,6 @@ export const createTokenViaPfsdk = async ({
     console.log("Fee payer balance:", feePayerBalance / LAMPORTS_PER_SOL);
 
     const transaction = new Transaction();
-
-    // const associatedTokenAddress = await ensureAssociatedTokenAccountExists(
-    //   connection,
-    //   transaction,
-    //   creator,
-    //   creator, // Owner is the same as the creator in this case
-    //   token // Token mint
-    // );
-
-    // console.log("Associated Token Address:", associatedTokenAddress.toBase58());
 
     const createInstruct = await fun.compileCreateTokenInstruction({
       creator: creator.publicKey,
@@ -145,17 +85,16 @@ export const createTokenViaPfsdk = async ({
 
     // simulate transaction
 
-    const options = {
-      commitment: "confirmed", // Or "finalized" for stronger guarantees
-      preflightCommitment: "processed",
-      skipPreflight: false,
-      maxRetries: 10, // Retry mechanism for confirmation
-    };
-
     const simulation = await connection.simulateTransaction(transaction, [
       creator,
       token,
     ]);
+    if (simulation.value.err) {
+      console.error("Simulation failed:", simulation.value.err);
+      throw new Error("Transaction simulation failed");
+    }
+    console.log("Simulation succeeded:", simulation.value.logs);
+
     if (simulation.value.err) {
       console.error("Simulation failed:", simulation.value.err);
     } else {
@@ -170,14 +109,13 @@ export const createTokenViaPfsdk = async ({
     ]);
     console.log("Transaction signature:", signature);
 
-    await connection.confirmTransaction(signature, "confirmed");
+    await connection.confirmTransaction(signature, "processed");
     console.log("Transaction confirmed:", signature);
 
     return {
       success: true,
       data: {
         tokenCreation: signature,
-        // tokenPurchase: handleTokenBuy.data,
       },
     };
   } catch (error: any) {

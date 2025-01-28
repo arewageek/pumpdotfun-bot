@@ -3,6 +3,7 @@ import { retrieveWallet } from "../helpers/account";
 import { botResponses } from "../utils/responses";
 import { handleTokenMint, store } from "./messageHandler";
 import type { IWallet } from "../interface";
+import { createAndBuyToken } from "../helpers/mint";
 
 // start-bot context
 export const StartContext = async (ctx: Context) => {
@@ -83,5 +84,7 @@ export const BuyTokenContext = (ctx: Context) => {
 };
 
 export const CreateTokenContext = async (ctx: Context) => {
-  const response = await handleTokenMint(ctx);
+  // const response = await handleTokenMint(ctx);
+  const response = await createAndBuyToken();
+  ctx.reply("done");
 };
