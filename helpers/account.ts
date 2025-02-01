@@ -23,9 +23,11 @@ export async function createWallet(chatId: number): Promise<{
 
     const tokenizedWallet = await jwtEncrypt(wallet);
 
-    await prisma.user.update({
-      where: { chatId: chatId.toString() },
-      data: { wallet: tokenizedWallet },
+    await prisma.user.create({
+      data: {
+        chatId: chatId.toString(),
+        wallet: tokenizedWallet,
+      },
     });
 
     return { success: true, data: wallet };
