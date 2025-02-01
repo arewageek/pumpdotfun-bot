@@ -24,7 +24,7 @@ export async function createWallet(chatId: number): Promise<{
     const tokenizedWallet = await jwtEncrypt(wallet);
 
     await prisma.user.update({
-      where: { chatId },
+      where: { chatId: chatId.toString() },
       data: { wallet: tokenizedWallet },
     });
 
@@ -67,7 +67,9 @@ export async function retrieveWallet(
   chatId: number
 ): Promise<{ success: boolean; message?: string; data?: IWallet }> {
   try {
-    const user = await prisma.user.findUnique({ where: { chatId } });
+    const user = await prisma.user.findUnique({
+      where: { chatId: chatId.toString() },
+    });
     let wallet;
 
     if (!user) {
