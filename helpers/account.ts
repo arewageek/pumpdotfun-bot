@@ -18,6 +18,7 @@ export async function createWallet(chatId: number): Promise<{
     };
 
     const tokenizedWallet = await jwtEncrypt(wallet.private);
+    console.log({ tokenizedWallet });
 
     await prisma.user.create({
       data: {
@@ -66,11 +67,13 @@ export async function retrieveWallet(chatId: number): Promise<{
     let walletToken;
     let isNewWallet = false;
 
-    if (!user) {
+    if (!user || user.wallet == "") {
       const create = await createWallet(chatId);
       walletToken = create.data?.private;
       isNewWallet = true;
     } else {
+      // await prisma.user.deleteMany({});
+      console.log({ user });
       walletToken = (await jwtDecrypt(user.wallet)).valueOf();
     }
 

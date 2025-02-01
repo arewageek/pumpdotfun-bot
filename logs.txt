@@ -1,0 +1,28 @@
+{
+  status: "Wallet export",
+  wallet: {
+    success: true,
+    data: {
+      public: "5GcB4ZUgiwp6WGpayjR1EXbB9WtvaJ5Qz7drkN1SUbqG",
+      token: "38tPQApn9GurhH8fi7RiG7KPBpyYZMFFoCAE55uxsomFCZKkCsDZNnrZSibQVBEj4BSo9Z1GLYVUTnp66YF5YWAA",
+      balance: 0,
+    },
+    isNewWallet: false,
+  },
+  token: "38tPQApn9GurhH8fi7RiG7KPBpyYZMFFoCAE55uxsomFCZKkCsDZNnrZSibQVBEj4BSo9Z1GLYVUTnp66YF5YWAA",
+}
+
+{
+  publicKey: "5GcB4ZUgiwp6WGpayjR1EXbB9WtvaJ5Qz7drkN1SUbqG",
+  secret: "38tPQApn9GurhH8fi7RiG7KPBpyYZMFFoCAE55uxsomFCZKkCsDZNnrZSibQVBEj4BSo9Z1GLYVUTnp66YF5YWAA",
+}
+
+{
+  token: "eyJhbGciOiJIUzI1NiJ9.Mzh0UFFBcG45R3VyaEg4Zmk3UmlHN0tQQnB5WVpNRkZvQ0FFNTV1eHNvbUZDWktrQ3NEWk5uclpTaWJRVkJFajRCU285WjFHTFlWVVRucDY2WUY1WVdBQQ.ra4qh6cm6fQEqCKg6ZrR0usD4_u0o7TazW5EqjaECV8",
+  payload: "38tPQApn9GurhH8fi7RiG7KPBpyYZMFFoCAE55uxsomFCZKkCsDZNnrZSibQVBEj4BSo9Z1GLYVUTnp66YF5YWAA",
+}
+
+{
+  publicKey: "941nizknTncBuMxWkddF9r6G4scdcvXFgnXRmoKwqgdS",
+  secret: "2r3SWu7X6GfFjK2pberhkgvLuv4g4v6vsifWX7Ck3DU3LtvPg5PrL9gKGX6B9eABRVPnQ3jmTQyM8gNkbJhTaBz4",
+}
