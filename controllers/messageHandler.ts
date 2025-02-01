@@ -1,119 +1,201 @@
-import { InlineKeyboard, type Context } from "grammy";
-import meme from "../helpers/transactions";
-import { response } from "express";
-import users from "./users.controllers";
+import { MemorySessionStorage, type Context } from "grammy";
+import { createTokenViaPfsdk } from "../helpers/pfsdk";
 import { format } from "../utils/number-formatter";
+import prisma from "../lib/prisma";
+import { botResponses } from "../utils/responses";
+import { retrieveWallet } from "../helpers/account";
+import type { ITokenBuyStore, ITokenCreateStore, IWallet } from "../interface";
+import type { TransactionInstruction } from "@solana/web3.js";
+import { createAndBuyToken } from "../helpers/mint";
+
+export const store = new MemorySessionStorage();
+
+export const handleTokenName = async (ctx: Context) => {
+  try {
+    const name = ctx.message?.text!;
+
+    store.delete("token-create");
+    store.write("token-create", { name });
+
+    await ctx.reply(botResponses.symbol, {
+      reply_markup: { force_reply: true },
+    });
+  } catch (error) {
+    ctx.reply(botResponses.error, { reply_markup: { force_reply: true } });
+  }
+};
+
+export const handleTokenSymbol = async (ctx: Context) => {
+  try {
+    const symbol = ctx.message?.text!;
+
+    if (!store.has("token-create")) throw new Error(botResponses.error2);
+
+    const prev = store.read("token-create") as ITokenCreateStore;
+    store.write("token-create", { ...prev, symbol });
+
+    ctx.reply(botResponses.description, {
+      reply_markup: { force_reply: true },
+    });
+  } catch (error) {
+    ctx.reply(botResponses.error, { reply_markup: { force_reply: true } });
+  }
+};
+
+export const handleTokenDescription = async (ctx: Context) => {
+  try {
+    const description = ctx.message?.text;
+
+    if (!store.has("token-create")) throw new Error(botResponses.error2);
+    const prev = store.read("token-create") as ITokenCreateStore;
+    store.write("token-create", { ...prev, description });
+
+    ctx.reply(botResponses.image, {
+      reply_markup: { force_reply: true },
+    });
+  } catch (error) {
+    ctx.reply(botResponses.error, { reply_markup: { force_reply: true } });
+  }
+};
+
+export const handleTokenLogo = async (ctx: Context) => {
+  try {
+    const url = ctx.message?.text;
+
+    if (!store.has("token-create")) throw new Error(botResponses.error2);
+
+    const prev = store.read("token-create") as ITokenCreateStore;
+    store.write("token-create", { ...prev, image: url });
+
+    ctx.reply(botResponses.twitter, { reply_markup: { force_reply: true } });
+  } catch (error) {
+    ctx.reply(botResponses.error, { reply_markup: { force_reply: true } });
+  }
+};
+
+// request twitter handle
+export const handleTwitterLink = async (ctx: Context) => {
+  try {
+    const twitter = ctx.message?.text;
+
+    if (!store.has("token-create")) throw new Error(botResponses.error2);
+
+    const prev = store.read("token-create") as ITokenCreateStore;
+    store.write("token-create", { ...prev, twitter });
+
+    ctx.reply(botResponses.telegram, { reply_markup: { force_reply: true } });
+  } catch (error) {
+    ctx.reply(botResponses.error, { reply_markup: { force_reply: true } });
+  }
+};
+
+// request telegram community link
+export const handleTelegramLink = async (ctx: Context) => {
+  try {
+    const telegram = ctx.message?.text;
+
+    if (!store.has("token-create")) throw new Error(botResponses.error2);
+
+    const prev = store.read("token-create") as ITokenCreateStore;
+    store.write("token-create", { ...prev, telegram });
+
+    ctx.reply(botResponses.website, { reply_markup: { force_reply: true } });
+  } catch (error) {
+    ctx.reply(botResponses.error, { reply_markup: { force_reply: true } });
+  }
+};
+
+// request website link
+export const handleWebsiteLink = async (ctx: Context) => {
+  try {
+    const url = ctx.message?.text;
+
+    if (!store.has("token-create")) throw new Error(botResponses.error2);
+
+    const prev = store.read("token-create") as ITokenCreateStore;
+    store.write("token-create", { ...prev, website: url });
+
+    ctx.reply(botResponses.initialBuy, { reply_markup: { force_reply: true } });
+  } catch (error) {
+    ctx.reply(botResponses.error, { reply_markup: { force_reply: true } });
+  }
+};
+
+export const handleTokenMint = async (ctx: Context) => {
+  try {
+    if (!store.has("token-create")) throw new Error(botResponses.error2);
+
+    const token = store.read("token-create") as ITokenCreateStore;
+
+    // const response = await createTokenViaPfsdk({
+    //   chatId: ctx.chatId?.toString()!,
+    //   // name: token?.name!,
+    //   // symbol: token?.symbol!,
+    //   // description: token?.description!,
+    //   // imageUri: token?.image!,
+    //   // amount: Number(ctx.message?.text),
+    //   // twitter: token?.twitter,
+    //   // telegram: token?.telegram,
+    //   // website: token?.website,
+    // });
+
+    const response = await createAndBuyToken({
+      name: token?.name,
+      symbol: token?.symbol,
+      description: token?.description,
+      image: token?.image,
+      amount: Number(ctx.message?.text),
+      telegram: token?.telegram,
+      website: token?.website,
+      twitter: token?.twitter,
+    });
+
+    ctx.reply(response.message, { parse_mode: "Markdown" });
+  } catch (error) {
+    console.error({ createTokenError: error });
+    await ctx.reply("❌ An error occurred while creating the token.");
+  }
+};
 
 export const handleTokenCA = async (ctx: Context) => {
-  const ca = ctx.message?.text!;
-  const chatId = ctx.chatId!;
-  //   const data = await fetchTokenData(ca!);
-  //   const token = data.data;
+  try {
+    const ca = ctx.message?.text;
 
-  //   const response = `\`${token.name} ($${token.symbol})\`🚀🚀
-  //         \n\`${token.address}\`
-  //         \nBalance: \*0 Sol ($0)\*
-  //         \nPrice: \*$${Number(token.price_usd!).toFixed(
-  //           6
-  //         )}\* \| Liq: \*$${Number(
-  //     token.total_reserve_in_usd
-  //   ).toLocaleString()}\* \| FDV: \*$${Number(token.fdv_usd).toLocaleString()}\*
-  //         \
-  //         `;
+    store.delete("token-buy");
+    store.write("token-buy", { ca });
 
-  //   token
-  //     ? ctx.reply(response, {
-  //         parse_mode: "Markdown",
-  //         reply_markup: new InlineKeyboard()
-  //           .text("Buy 🟢", "buy")
-  //           .text("Sell 🔴", "sell"),
-  //       })
-  //     : ctx.reply(
-  //         "Oops! 🤭🤭\n\nCould not find the contract address you provided"
-  //       );
-
-  const res = await meme.data(ca, chatId);
-  const token = res.data;
-  const balance = res.meta?.balance!;
-
-  if (!token) {
-    ctx.reply(
-      `Oops\! 🤭🤭\n\nCould not find the contract address you provided`
-    );
-    return false;
+    ctx.reply(botResponses.tokenBuyAmount, {
+      reply_markup: { force_reply: true },
+    });
+  } catch (error) {
+    ctx.reply(botResponses.error, { reply_markup: { force_reply: true } });
   }
-
-  const reply = `Buy \*${token.name}\* ─── \`$${token.symbol}\` 📈🚀
-  \n\`${token.address}\`\n(Tap on CA to copy)
-  \n\*Balance: $${balance.toLocaleString()}\*
-  \n\*Price: $${Number(token.price)
-    .toFixed(6)
-    .toLocaleString()} ─── Liq: $${format(
-    Number(token.liquidity.toFixed(2))
-  )} ─── MC: $${format(Number(token.marketCap.toFixed(2)))}\*
-  \nTwitter | Telegram | Website
-  \n24Hr Vol: \*$${format(
-    Number(token.tradeVolume24h.toFixed(2))
-  )} ─── ${format(Number(token.tradeUserCount))} trades\* \nBuys: \*${format(
-    Number(token.buyCount24h.toFixed(2))
-  )}\* ─── Sells: \*${format(Number(token.sellCount24h.toFixed(2)))}\*
-  \nTop 10: \*${Number(token.top10Holder).toLocaleString()}%\*
-  `;
-  ctx.reply(reply, {
-    parse_mode: "Markdown",
-    reply_markup: new InlineKeyboard()
-      .text("⬅ Back", "back")
-      .text("⟲ Refresh", "refresh")
-      .row()
-      .text("Buy 🟢", "buy"),
-  });
 };
 
-export const handleFundWallet = async (ctx: Context) => {
-  const amount = Number(ctx.message?.text);
-  const chatId = ctx.chatId!;
-  const response = await users.fund({ chatId, amount });
-  const reply = {
-    success: `Your wallet has been credited with $${amount.toLocaleString()}`,
-    failed: `Failed to fund wallet`,
-  };
-  ctx.reply(response.success ? reply.success : reply.failed);
-};
-
-export const handleFundWithdrawal = async (ctx: Context) => {
-  const amount = Number(ctx.message?.text);
-  const chatId = ctx.chatId!;
-  const response = await users.withdraw({ chatId, amount });
-  const reply = response.success
-    ? `Your wallet has been debited with $${amount.toLocaleString()}`
-    : response.message || "Failed to withdraw from your wallet";
-  ctx.reply(reply);
-};
-
-export const handleTokenBuy = async (ctx: Context) => {
-  const amount = Number(ctx.message?.text);
-  const chatId = ctx.chatId!;
-
-  let reply = `Processing your transaction...`;
-  ctx.reply(reply);
-
-  const trx = await meme.buy(chatId, amount);
-  if (!trx.success) {
-    reply = trx.message!;
-  } else {
-    const response = trx.data;
-    reply = `\*Transaction successful!\* 🚀
-    \nMarket Cap: \`$${format(response?.buy.mc!)}\`
-    \nBase Price: \`$${format(response?.buy.price!, 6)}\`
-    \nQuantity Purchased: \`${format(response?.quantity!, 2)}\`
-    `;
-  }
-
-  trx && ctx.reply(reply, { parse_mode: "Markdown" });
-};
-
-export const handleTokenPreview = (ca: string, ctx: Context) => {
-  ctx.reply("ca");
-  console.log({ responseFromMessageHandler: "token preview callback" });
-  return "content";
+export const handleTokenBuyAmount = async (ctx: Context) => {
+  // try {
+  //   const amount = ctx.message?.text;
+  //   const chatId = ctx.chatId!;
+  //   const tokenToBuy = store.read("token-buy") as ITokenBuyStore;
+  //   if (!store.has("token-buy"))
+  //     return ctx.reply("Please provide the token's contract address first");
+  //   const prev = store.read("token-buy") as ITokenBuyStore;
+  //   prev.amount = amount;
+  //   store.write("token-buy", prev);
+  //   const trader = store.has("wallet")
+  //     ? (store.read("wallet") as IWallet)
+  //     : (await retrieveWallet(chatId)).data;
+  //   // const response = await buyToken({
+  //   //   trader: trader?.token as string,
+  //   //   token: tokenToBuy.ca as string,
+  //   //   amount: Number(amount),
+  //   //   isInitialBuy: false,
+  //   //   isFormatted: false,
+  //   // });
+  //   if (response.success) {
+  //     ctx.reply("Token purchase was successful!!");
+  //   }
+  // } catch (error) {
+  //   ctx.reply(botResponses.error, { reply_markup: { force_reply: true } });
+  // }
 };
